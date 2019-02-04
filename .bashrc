@@ -149,4 +149,6 @@ i2pstart() {
   /usr/share/i2p/runplain.sh
 }
 
+alias sbcl='rlwrap sbcl'
+
 . $HOME/.bashrc.secret

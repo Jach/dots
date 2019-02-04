@@ -1,9 +1,9 @@
 (use-modules (ice-9 readline))
 (activate-readline)
 ;http://www.cs.rochester.edu/~gildea/guile-scmutils/
-(load "/home/kevin/guile-scmutils/src/load.scm")
+;(load "/home/kevin/guile-scmutils/src/load.scm")
 ;(define f (literal-function 'f))
 ;(define f^2 (expt f 2))
 ;(pe ((D f^2) 't))
-(define D g:derivative)
-(set-current-module generic-environment)
+;(define D g:derivative)
+;(set-current-module generic-environment)

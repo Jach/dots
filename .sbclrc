@@ -6,3 +6,70 @@
   (when (probe-file quicklisp-init)
     (load quicklisp-init)))
 
+(defparameter *undefined-functions* nil)
+(defun enable-undefn-warnings ()
+  ; useful idea I had, rebind defun to keep track
+  ; of functions that have been referenced but not yet
+  ; defined. Loosely inspired by Utopian.
+  (setf (macro-function 'cl-defun) (macro-function 'defun))
+  (handler-bind
+    ((warning
+       (lambda (w)
+         (declare (ignorable w))
+         (invoke-restart 'muffle-warning)))
+     (sb-ext:symbol-package-locked-error
+       (lambda (e)
+         (declare (ignorable e))
+         (invoke-restart 'continue))))
+    (defmacro defun (name args &body body)
+      `(handler-bind
+         ((sb-int:simple-style-warning
+            (lambda (w)
+              (let ((c (simple-condition-format-control w))
+                    (a (simple-condition-format-arguments w)))
+                (when (and (equal c "undefined ~(~A~): ~S")
+                           (eql (length a) 2)
+                           (eql (first a) :function))
+                  (setf *undefined-functions*
+                        (union *undefined-functions* (cdr a))))))))
+         (eval '(cl-defun ,name ,args ,@body))
+         (setf *undefined-functions*
+               (set-difference *undefined-functions* '(,name)))
+         (if (plusp (length *undefined-functions*))
+             (format t
+                     "; REMINDER: you still have undefined functions ~S"
+                     *undefined-functions*)))))
+  (defun typo (fn)
+    "Remove undef fn reminder manually, e.g. due to typos."
+    (setf *undefined-functions*
+          (set-difference *undefined-functions* (list fn))))
+  )
+
+
+(defun hash-to-list (hash)
+  "Turns key-value hash table to list of ((k1 v1) (k2 v2) ...)"
+  (loop
+    :for k being the hash-key :using (hash-value v) of hash
+    :nconc (list (list k v))))
+
+(defun hash-to-plist (hash)
+  "Turns key-value hash table to pair list of (k1 v1 k2 v2 ...)"
+  (loop
+    :for k being the hash-key :using (hash-value v) of hash
+    :nconc (list k v)))
+
+(defmethod print-object ((hash hash-table) out)
+  "Print hash table like a data object, e.g.
+{:A 1
+ :B 2}"
+  (format t "{~{~s ~s~^~% ~}}" (hash-to-plist hash))
+  #|(loop
+    :initially (format out "{")
+    :for k being the hash-key :using (hash-value v) of hash
+    :do (format out "~% ~s ~s" k v)
+    :finally (format out "~%}~%"))|#)
+
+;(declaim (optimize (debug 3)))
+
+(ql:quickload 'cmu-infix)
+(named-readtables:in-readtable cmu-infix:syntax)

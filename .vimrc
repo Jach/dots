@@ -57,7 +57,7 @@ let g:tex_flavor='latex'
 "set nu
 "syntax on " ubuntu specific
 "au BufAdd,BufNewFile * nested tab sball
-map \gt :tab split<CR>:exec("tag ".expand("<cword>"))<CR>
+"map \gt :tab split<CR>:exec("tag ".expand("<cword>"))<CR>
 "map \tags :!ctags -R --c++-kinds=+pl --fields=+iaS --extra=+q . <CR>
 "ctags -R --language-force=lisp ~/quicklisp/dists/quicklisp/software
 set tags+=./tags;/
@@ -65,7 +65,7 @@ set tags+=~/.vim/tags/cpp
 set tags+=~/.vim/tags/gl
 set tags+=~/.vim/tags/sdl
 set tags+=~/.vim/tags/qt4
-set tags+=~/.vim/tags/quicklisp
+"set tags+=~/.vim/tags/quicklisp
 
 au BufNewFile,BufRead *.mxml set filetype=mxml
 au BufNewFile,BufRead *.as set filetype=actionscript
@@ -91,9 +91,9 @@ let OmniCpp_MayCompleteArrow = 1 " autocomplete after ->
 let OmniCpp_MayCompleteScope = 1 " autocomplete after ::
 let OmniCpp_DefaultNamespaces = ["std", "_GLIBCXX_STD"]
 " automatically open and close the popup menu / preview window
-au CursorMovedI,InsertLeave * if pumvisible() == 0|silent! pclose|endif
-set completeopt=menuone,menu,longest,preview
-set ofu=syntaxcomplete#Complete
+"au CursorMovedI,InsertLeave * if pumvisible() == 0|silent! pclose|endif
+"set completeopt=menuone,menu,longest,preview
+"set ofu=syntaxcomplete#Complete
 
 " Pydiction
 let g:pydiction_location = '/home/kevin/.vim/pydiction-1.2/complete-dict'
@@ -206,7 +206,11 @@ let g:lisp_rainbow=1
 " ,s describes symbol
 " ,h looks up symbol in hyperspec
 " ,d evaluates form
-" ,D compiles form
+" ,D compiles DeFun
+" ,L compile and load current file
+" ,F compiles file
+" ,b eval buffer
+" ,u undefine function
 " ,e evals current exp
 " ,r evals 'region' or selection
 " ,g set-package
@@ -214,10 +218,14 @@ let g:lisp_rainbow=1
 " ,1 macroexpand-1
 " ,m macroexpand all
 " ,B set breakpoint
+" ,l disassemble
+" ,a abort
 " ,v eval-in-debug-frame. e.g. (swank-backend:restart-frame idx)
 "      (swank-backend:activate-stepping frame) (swank-backend:sldb-step-into) (swank-backend:sldb-step-next) (swank-backend:sldb-step-out)
 " ,i inspect frame
 " ,n continue
+" ,- clear repl
+" ,y interrupt repl
 "    ,xc          Who Calls
 "    ,xr          Who References
 "    ,xs          Who Sets
@@ -227,12 +235,31 @@ let g:lisp_rainbow=1
 "    ,xl          List Callers
 "    ,xe          List Callees
 let g:slimv_repl_split=2
-" ctags -R --language-force=lisp ~/quicklisp/dists/quicklisp/software
-let g:slimv_unmap_tab=1
+let g:slimv_repl_split_size=15
+" ctags -R -a --language-force=lisp ~/quicklisp/dists/quicklisp/software
+"let g:slimv_unmap_tab=1
+"let g:slimv_ctags='ctags -R -a --language-force=lisp *'
+let g:slimv_swank_cmd='!xterm -e sbcl --dynamic-space-size 10000 --load /home/kevin/.vim/bundle/slimv/slime/start-swank.lisp &'
+" when using cross ref, jump to file name printed in repl
+" and move it to other window, then switch back to repl
+map \jf gf<cr>:call WindowSwap#EasyWindowSwap()<cr><C-w>w:call WindowSwap#EasyWindowSwap()<cr><C-w>w<C-o><C-o>
+" note that ctrl+] for def (works for make-instance args)
+" ctrl+t to jump back, ctrl+o/ctrl+i to toggle back/forth...
 
-let g:vlime_compiler_policy = {"DEBUG": 3}
+"let g:vlime_compiler_policy = {"DEBUG": 3}
 
 let g:large_file = 1024 * 1024 * 1024 " 1 GB is 'large'
 " don't make swap file for large files
 autocmd BufReadPre * let f=expand("<afile>") | if getfsize(f)
             \ > g:large_file | set noswapfile | endif
+
+map \justify gwip
+map \table :TableModeToggle
+" use || for boundary row
+
+set wildignore+=*.swp,*.fasl,*.o
+let g:ctrlp_custom_ignore = {
+  \ 'dir':  '\v[\/](\.(git|hg|svn)|quicklisp)$',
+  \ 'file': '\v\.(exe|so|dll|o)$',
+  \ 'link': 'some_bad_symbolic_links',
+  \ }
