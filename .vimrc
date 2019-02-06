@@ -263,3 +263,9 @@ let g:ctrlp_custom_ignore = {
   \ 'file': '\v\.(exe|so|dll|o)$',
   \ 'link': 'some_bad_symbolic_links',
   \ }
+
+function! SlimvXrefSysDependsOn()
+    call SlimvXrefBase( 'System Depends On: ', ':sys-depends-on' )
+endfunction
+
+map ,xd :call SlimvXrefSysDependsOn()<cr>
