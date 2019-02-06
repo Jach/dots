@@ -268,4 +268,10 @@ function! SlimvXrefSysDependsOn()
     call SlimvXrefBase( 'System Depends On: ', ':sys-depends-on' )
 endfunction
 
+function! SlimvXrefEditUses()
+    call SlimvXrefBase( 'Who Edits/Uses: ', ':edit-uses' )
+endfunction
+
 map ,xd :call SlimvXrefSysDependsOn()<cr>
+
+map ,xx :call SlimvXrefEditUses()<cr>
