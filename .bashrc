@@ -31,9 +31,13 @@ export PATH="$PATH:/home/kevin/luciddb-0.0.0/bin/:/home/kevin/p4s/"
 export CLASSPATH="$CLASSPATH:.:/usr/share/jdbc-mysql/lib/jdbc-mysql.jar"
 export PYTHONSTARTUP=$HOME'/.pythonrc.py'
 
-alias ltxm='latexmk -silent -pdf $@'
+function ltxm() {
+  latexmk -silent -pdf $@
+}
 alias ltxc='latexmk -silent -c -CF'
-alias ltx='latexmk -silent -pdf $@ && ltxc'
+function ltx() {
+  latexmk -silent -pdf $@ && ltxc
+}
 # To latex a paper with a .bib file:
 # pdflatex -interaction=batchmode file.tex
 # bibtex file
@@ -151,4 +155,21 @@ i2pstart() {
 
 alias sbcl='rlwrap sbcl'
 
+. $HOME/git_repos/not_mine/git-issue/gi-completion.sh
+
+# have less print to stdout if less than one screen of text
+export PAGER="$PAGER -FX"
+
+flac-eac-split() {
+  cuefile=$1
+  flacfile=$2
+  # shntool
+  shnsplit -f "$cuefile" -t %n-%t -o flac "$flacfile"
+  # cuetools
+  cuetag.sh "$cuefile" [0-9]*.flac
+}
+
+export PATH=$PATH:$HOME/git_repos/not_mine/srt-resync
+
 . $HOME/.bashrc.secret
+

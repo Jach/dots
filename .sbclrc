@@ -70,6 +70,9 @@
     :finally (format out "~%}~%"))|#)
 
 ;(declaim (optimize (debug 3)))
+;(declaim (optimize (speed 3) (space 3) (debug 0) (safety 0)))
 
 (ql:quickload 'cmu-infix)
 (named-readtables:in-readtable cmu-infix:syntax)
+
+(format t "Your cwd is ~s.~%" (sb-posix:getcwd))

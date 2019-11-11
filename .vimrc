@@ -4,7 +4,7 @@ set pastetoggle=<F2>
 set hidden " keep buffers open without necessarily displaying them
 " note to self, <leader> is typically \...
 cnoreabbrev wq w<bar>bd
-cnoreabbrev q bd
+cnoreabbrev q bfirst<bar>bd#
 " note: now you must use :quit to quit...
 
 set incsearch
@@ -149,7 +149,7 @@ augroup END
 
 "nnoremap <F3> :NumbersOnOff<cr>
 
-fun! ISlamhound() 
+fun! ISlamhound()
   write
   set autoread
   silent execute "!lein slamhound '%:p'"
@@ -184,6 +184,7 @@ map \lp :call LocFix(":lprev")<cr>
 let g:syntastic_cpp_checkers = ['cppcheck', 'gcc']
 let g:syntastic_c_checkers = ['cppcheck', 'splint', 'gcc']
 let g:syntastic_asciidoc_checkers = []
+let g:syntastic_python_checkers = ['pylint'] " seemed to have changed default to flake8, boo
 
 let g:sexp_enable_insert_mode_mappings = 0
 
@@ -235,7 +236,7 @@ let g:lisp_rainbow=1
 "    ,xl          List Callers
 "    ,xe          List Callees
 let g:slimv_repl_split=2
-let g:slimv_repl_split_size=15
+let g:slimv_repl_split_size=20
 " ctags -R -a --language-force=lisp ~/quicklisp/dists/quicklisp/software
 "let g:slimv_unmap_tab=1
 "let g:slimv_ctags='ctags -R -a --language-force=lisp *'
@@ -254,8 +255,12 @@ autocmd BufReadPre * let f=expand("<afile>") | if getfsize(f)
             \ > g:large_file | set noswapfile | endif
 
 map \justify gwip
-map \table :TableModeToggle
+"map \table :TableModeToggle
+"already \tm
 " use || for boundary row
+let g:table_mode_corner='+'
+let g:table_mode_corner_corner='+'
+let g:table_mode_header_fillchar='='
 
 set wildignore+=*.swp,*.fasl,*.o
 let g:ctrlp_custom_ignore = {
@@ -275,3 +280,15 @@ endfunction
 map ,xd :call SlimvXrefSysDependsOn()<cr>
 
 map ,xx :call SlimvXrefEditUses()<cr>
+
+function! StripTrailingWhitespace()
+  normal mZ
+  %s/\s\+$//e
+  if line("'Z") != line(".")
+    echo "Stripped whitespace\n"
+  endif
+  normal `Z
+endfunction
+autocmd BufWritePre * :call StripTrailingWhitespace()
+
+set autochdir
