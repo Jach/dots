@@ -158,7 +158,9 @@ alias sbcl='rlwrap sbcl'
 . $HOME/git_repos/not_mine/git-issue/gi-completion.sh
 
 # have less print to stdout if less than one screen of text
-export PAGER="$PAGER -FX"
+#export PAGER="$PAGER -FX"
+# breaks the new man-db...
+alias less='less -FX'
 
 flac-eac-split() {
   cuefile=$1
@@ -173,3 +175,5 @@ export PATH=$PATH:$HOME/git_repos/not_mine/srt-resync
 
 . $HOME/.bashrc.secret
 
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash

@@ -3,8 +3,13 @@ imap <F2> <C-O><F2>
 set pastetoggle=<F2>
 set hidden " keep buffers open without necessarily displaying them
 " note to self, <leader> is typically \...
-cnoreabbrev wq w<bar>bd
-cnoreabbrev q bfirst<bar>bd#
+
+" looking for a more intuitive way to handle closing buffers when the
+" slime repl is one of them...
+" Thought :q is convenient, just going to train myself to :bd instead.
+"cnoreabbrev wq w<bar>bd
+"cnoreabbrev q bfirst<bar>bd#
+
 " note: now you must use :quit to quit...
 
 set incsearch
@@ -73,6 +78,7 @@ au BufNewFile,BufRead *.tpl set filetype=php
 au BufNewFile,BufRead *.js set filetype=javascript
 au BufNewFile,BufRead *.tex set tw=80
 au BufNewFile,BufRead *.cljs set filetype=clojure
+au BufNewFile,BufRead *.asd set filetype=lisp
 
 map \cbase i#include <stdio.h><ESC>2o<ESC>iint main(void) {<ESC>2o<ESC>i  return 0;<ESC>o<ESC>i}<ESC>
 map \jbase ipublic class FileName {<ESC>2o<ESC>i  public static void main(String args[]) {<ESC>3o<ESC>i  }<ESC>o<ESC>i}<ESC>
@@ -263,11 +269,11 @@ let g:table_mode_corner_corner='+'
 let g:table_mode_header_fillchar='='
 
 set wildignore+=*.swp,*.fasl,*.o
-let g:ctrlp_custom_ignore = {
-  \ 'dir':  '\v[\/](\.(git|hg|svn)|quicklisp)$',
-  \ 'file': '\v\.(exe|so|dll|o)$',
-  \ 'link': 'some_bad_symbolic_links',
-  \ }
+"let g:ctrlp_custom_ignore = {
+"  \ 'dir':  '\v[\/](\.(git|hg|svn)|quicklisp)$',
+"  \ 'file': '\v\.(exe|so|dll|o)$',
+"  \ 'link': 'some_bad_symbolic_links',
+"  \ }
 
 function! SlimvXrefSysDependsOn()
     call SlimvXrefBase( 'System Depends On: ', ':sys-depends-on' )
@@ -292,3 +298,8 @@ endfunction
 autocmd BufWritePre * :call StripTrailingWhitespace()
 
 set autochdir
+
+set rtp+=/home/kevin/git_repos/not_mine/fzf
+" remap ctrl-p, fzf is better...
+"let g:ctrlp_map='<c-`>'
+map <c-p> :FZF<cr>
