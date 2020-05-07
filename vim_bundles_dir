@@ -1,15 +1,15 @@
-ctrlp.vim
 nimrod.vim
 slimv
 syntastic
-try-fzf
 try-neocomplete
 try-nerdtree-again
 try-tagbar
 vim-buftabline
+vim-fugitive
 vim-javascript
 vim-obsession
 vim-repeat
+vim-rooter
 vim-sexp
 vim-sexp-mappings-for-regular-people
 vim-surround
