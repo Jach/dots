@@ -6,7 +6,8 @@ set hidden " keep buffers open without necessarily displaying them
 
 " looking for a more intuitive way to handle closing buffers when the
 " slime repl is one of them...
-" Thought :q is convenient, just going to train myself to :bd instead.
+" Though :q is convenient, just going to train myself to :bd instead. or :Bd
+" now with vim-bbye.
 "cnoreabbrev wq w<bar>bd
 "cnoreabbrev q bfirst<bar>bd#
 
@@ -19,6 +20,9 @@ set scrolloff=2
 set wildmode=longest,list
 set showcmd
 "set tw=80
+set colorcolumn=120
+"set linebreak
+"set formatoptions+=t
 set runtimepath+=/home/kevin/.vim/marc-plugins/vim-addon-manager
 " activate the addons called 'vim-addon-manager', 'JSON', 'name1', 'name2'
 " This adds them to runtimepath and ensures that plugin/* and after/plugin/*
@@ -77,6 +81,7 @@ au BufNewFile,BufRead *.as set filetype=actionscript
 au BufNewFile,BufRead *.tpl set filetype=php
 au BufNewFile,BufRead *.js set filetype=javascript
 au BufNewFile,BufRead *.tex set tw=80
+au BufNewFile,BufRead *.md set tw=80
 au BufNewFile,BufRead *.cljs set filetype=clojure
 au BufNewFile,BufRead *.asd set filetype=lisp
 
@@ -191,6 +196,7 @@ let g:syntastic_cpp_checkers = ['cppcheck', 'gcc']
 let g:syntastic_c_checkers = ['cppcheck', 'splint', 'gcc']
 let g:syntastic_asciidoc_checkers = []
 let g:syntastic_python_checkers = ['pylint'] " seemed to have changed default to flake8, boo
+" though both are very slow...
 
 let g:sexp_enable_insert_mode_mappings = 0
 

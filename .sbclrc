@@ -84,3 +84,4 @@
 (format t "Your cwd is ~s.~%" (sb-posix:getcwd))
 
 ; (sb-ext:describe-compiler-policy)
+; (sb-cltl2:declaration-information 'optimize)

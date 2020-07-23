@@ -4,6 +4,7 @@ syntastic
 try-neocomplete
 try-nerdtree-again
 try-tagbar
+vim-bbye
 vim-buftabline
 vim-fugitive
 vim-javascript
