@@ -91,7 +91,7 @@ alias camcam="gphoto2 --get-all-files"
 alias servertest='ab -n 10 -c 5 http://www.thejach.com/'
 
 source /usr/share/bash-completion/git-prompt.sh
-export PS1="\`if [ \$? = 0 ]; then echo \[\e[32m\]':)'\[\e[0m\]; else echo \[\e[31m\]':('\[\e[0m\]; fi\` \[\033[01;32m\]\u@\h\[\033[01;34m\] \w\$(__git_ps1) \$\[\033[00m\] "
+export PS1="\$(if [ \$? = 0 ]; then echo \[\e[32m\]':)'\[\e[0m\]; else echo \[\e[31m\]':('\[\e[0m\]; fi) \[\033[01;32m\]\u@\h\[\033[01;34m\] \w\$(__git_ps1) \$\[\033[00m\] "
 
 # trying this out
 alias python='pypy'
@@ -177,3 +177,10 @@ export PATH=$PATH:$HOME/git_repos/not_mine/srt-resync
 
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/home/kevin/google-cloud-sdk/path.bash.inc' ]; then . '/home/kevin/google-cloud-sdk/path.bash.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/home/kevin/google-cloud-sdk/completion.bash.inc' ]; then . '/home/kevin/google-cloud-sdk/completion.bash.inc'; fi
+PATH=$PATH:$HOME/.local/bin
