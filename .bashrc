@@ -63,7 +63,6 @@ MP() { /usr/bin/mplayer `$HOME/path-selector.sh "$@"`; }
 alias ant_flex="ant; cp ../dynamodb-services/wars/adminui.war ../dynamodb-services/tmp/dynamodb-services/webapps/"
 alias ant_ws="ant deploy; cp ../dynamodb-services/wars/adminws.war ../dynamodb-services/tmp/dynamodb-services/webapps/"
 
-fortune -a
 alias vgrind="valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes --track-origins=yes -v"
 
 # also works with hw:0 make sure capture on gnome is up and record
@@ -184,3 +183,27 @@ if [ -f '/home/kevin/google-cloud-sdk/path.bash.inc' ]; then . '/home/kevin/goog
 # The next line enables shell command completion for gcloud.
 if [ -f '/home/kevin/google-cloud-sdk/completion.bash.inc' ]; then . '/home/kevin/google-cloud-sdk/completion.bash.inc'; fi
 PATH=$PATH:$HOME/.local/bin
+
+confirm() {
+  read -r -p "$1 [Y/n] " response
+  response=${response,,} # toLower
+  if [[ "$response" =~ ^(no|n)$ ]]; then
+    false
+  else
+    true
+  fi
+}
+
+webcam() {
+  # does this still work?
+  while true; do
+    fswebcam -r 1280x720 --png -1 -D 1 -S 30 --no-banner‌"/webcam/Webcam-`date +%s`".png
+    sleep 1200
+  done
+}
+
+# set -o noclobber # forbids x > foo; protect self from overwriting foo...
+
+export ua_googlebot='Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+
+fortune -a
