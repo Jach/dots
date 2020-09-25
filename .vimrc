@@ -13,15 +13,16 @@ set hidden " keep buffers open without necessarily displaying them
 
 " note: now you must use :quit to quit...
 
-set incsearch
-set ignorecase
-set smartcase
-set scrolloff=2
-set wildmode=longest,list
-set showcmd
-"set tw=80
-set colorcolumn=120
-"set linebreak
+set incsearch " incremental highlighting
+set ignorecase " case-insensitive search...
+set smartcase " ...unless search string has a capital letter
+set wildmode=longest,list " tab completion behavior when opening files
+set wildignore+=*.swp,*.fasl,*.o " don't show these in tab completed list
+set showcmd " ensures chording/command preview is shown as you type
+set scrolloff=2 " scrolling starts two lines from bottom instead of bottom
+"set tw=80 " textwidth 80 chars, auto-insert line breaks
+set colorcolumn=120 " visible color column at character offset to remind about long lines
+set linebreak " for display only; instead of line-wrapping at the last character of the line, breaks the line at a space or other custom char
 "set formatoptions+=t
 set runtimepath+=/home/kevin/.vim/marc-plugins/vim-addon-manager
 " activate the addons called 'vim-addon-manager', 'JSON', 'name1', 'name2'
@@ -29,6 +30,17 @@ set runtimepath+=/home/kevin/.vim/marc-plugins/vim-addon-manager
 " files are sourced
 call scriptmanager#Activate(['vim-addon-manager','JSON',"vim-addon-fcsh"])
 filetype plugin indent on
+"syntax on " ubuntu specific
+set nohls " no search highlights after searching
+set expandtab " spaces instead of tabs like a civilized person
+set tabstop=2
+set shiftwidth=2
+set softtabstop=2
+" the only valid spacings are 2 and 4!
+map \tabs2 :set tabstop=2<CR>:set shiftwidth=2<CR>:set softtabstop=2
+map \tabs4 :set tabstop=4<CR>:set shiftwidth=4<CR>:set softtabstop=4
+imap jk <Esc>
+
 map \b i\textbf{<ESC>ea}<ESC>
 "map \p i(<ESC>ea)<ESC>
 map \t i&lt;<ESC>ea&gt;<ESC>
@@ -51,20 +63,11 @@ imap \itemz \begin{itemize} \end{itemize}<Esc>Bba
 " zw - mark as wrong
 " zuw - undo wrong
 " @@ or @: - repeat last colon command
-imap jk <Esc>
 imap zz <C-X><C-O>
-set nohls
-set tabstop=2
-set shiftwidth=2
-set softtabstop=2
-set expandtab
-map \tabs2 :set tabstop=2<CR>:set shiftwidth=2<CR>:set softtabstop=2
-map \tabs4 :set tabstop=4<CR>:set shiftwidth=4<CR>:set softtabstop=4
 map \tabs5 :set tabstop=5<CR>:set shiftwidth=5<CR>:set softtabstop=5
 set grepprg=grep\ -nH\ $*
 let g:tex_flavor='latex'
 "set nu
-"syntax on " ubuntu specific
 "au BufAdd,BufNewFile * nested tab sball
 "map \gt :tab split<CR>:exec("tag ".expand("<cword>"))<CR>
 "map \tags :!ctags -R --c++-kinds=+pl --fields=+iaS --extra=+q . <CR>
@@ -81,9 +84,10 @@ au BufNewFile,BufRead *.as set filetype=actionscript
 au BufNewFile,BufRead *.tpl set filetype=php
 au BufNewFile,BufRead *.js set filetype=javascript
 au BufNewFile,BufRead *.tex set tw=80
-au BufNewFile,BufRead *.md set tw=80
+au BufNewFile,BufRead *.md set tw=80 " enforce text width
 au BufNewFile,BufRead *.cljs set filetype=clojure
 au BufNewFile,BufRead *.asd set filetype=lisp
+au BufNewFile,BufRead *.ros set filetype=lisp
 
 map \cbase i#include <stdio.h><ESC>2o<ESC>iint main(void) {<ESC>2o<ESC>i  return 0;<ESC>o<ESC>i}<ESC>
 map \jbase ipublic class FileName {<ESC>2o<ESC>i  public static void main(String args[]) {<ESC>3o<ESC>i  }<ESC>o<ESC>i}<ESC>
@@ -125,6 +129,8 @@ fun! OmniComplete()
 au BufWinLeave *? silent! mkview "no silent
 au BufWinEnter *? silent! loadview "no !
 command! Rmview execute "!rm -i ~/.vim/view/~=+" . substitute(substitute(expand('%:p'), "/home/kevin/", "", ""), "/", "=+", "g") . "="
+command! P4Ed execute "!p4 edit " . expand('%p')
+
 
 "call ToggleRaibowParenthesis
 "call rainbow_parenthsis#LoadRound()
@@ -212,6 +218,14 @@ endf
 map \ngt :tab split<CR>:call JumpToDef()<CR>
 "endNim
 
+" autocmd BufEnter * :syntax sync fromstart
+" uncomment above if experiencing syntax highlight problems,
+" should force buffer to redo syntax...
+
+" set dir=~/tmp/vim/
+" uncomment above to make vim swapfiles files stop showing up in project folders
+map \what :echo expand('%:p')<cr>
+
 " slimv
 let g:paredit_mode=0
 let g:lisp_rainbow=1
@@ -274,7 +288,6 @@ let g:table_mode_corner='+'
 let g:table_mode_corner_corner='+'
 let g:table_mode_header_fillchar='='
 
-set wildignore+=*.swp,*.fasl,*.o
 "let g:ctrlp_custom_ignore = {
 "  \ 'dir':  '\v[\/](\.(git|hg|svn)|quicklisp)$',
 "  \ 'file': '\v\.(exe|so|dll|o)$',
@@ -309,3 +322,6 @@ set rtp+=/home/kevin/git_repos/not_mine/fzf
 " remap ctrl-p, fzf is better...
 "let g:ctrlp_map='<c-`>'
 map <c-p> :FZF<cr>
+
+" DoPrettyXML
+
