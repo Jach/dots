@@ -23,10 +23,10 @@ try:
 except:
   pass
 
-sys.ps1 = '>>> ' # normal >>> 
-sys.ps2 = '... ' # normal ... 
-sys.ps1 = '' # normal >>> 
-sys.ps2 = '' # normal ... 
+sys.ps1 = '>>> ' # normal >>>
+sys.ps2 = '... ' # normal ...
+sys.ps1 = '' # normal >>>
+sys.ps2 = '' # normal ...
 true = True
 false = False
 
@@ -184,7 +184,7 @@ def tail_call_optimized(g):
   optimization. It does this by throwing an exception
   if it is it's own grandparent, and catching such
   exceptions to fake the tail call optimization.
-  
+
   This function fails if the decorated
   function recurses in a non-tail context.
   """
@@ -197,7 +197,7 @@ def tail_call_optimized(g):
       while 1:
         try:
           return g(*args, **kwargs)
-        except TailRecurseException, e:
+        except TailRecurseException as e:
           args = e.args
           kwargs = e.kwargs
   func.__doc__ = g.__doc__

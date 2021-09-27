@@ -5,6 +5,16 @@
   (when (probe-file quicklisp-init)
     (load quicklisp-init)))
 
+(defun update-ql ()
+  (ql:update-client)
+  (ql:update-all-dists))
+
+(defun update-sbcl-core ()
+  ; make sure to update-ql and restart sbcl first
+  ; add any quickloads here that we might want as part of core not captured by .sbclrc
+  ; numcl, vgplot
+  (uiop:dump-image "sbcl-core"))
+
 
 (defparameter *undefined-functions* nil)
 (defun enable-undefn-warnings ()
@@ -77,6 +87,9 @@
 ;(declaim (optimize (debug 3)))
 ;(declaim (optimize (speed 3) (space 3) (debug 0) (safety 0)))
 ; (declaim (optimize (speed 3)))
+;(progn
+;  (sb-ext:restrict-compiler-policy 'safety 3)
+;  (sb-ext:restrict-compiler-policy 'debug 3))
 
 #+quicklisp (ql:quickload 'cmu-infix)
 #+quicklisp (named-readtables:in-readtable cmu-infix:syntax)
@@ -84,5 +97,59 @@
 ;(format t "Your cwd is ~s.~%" (sb-posix:getcwd))
 
 ; (sb-ext:describe-compiler-policy)
+; sb-c::*policy*
 ; (sb-cltl2:declaration-information 'optimize)
 
+
+(set-dispatch-macro-character #\# #\! (lambda (stream subchar arg)
+                                        (declare (ignore subchar arg))
+                                        (read-line stream nil (values) t)
+                                        (values)))
+
+#+quicklisp (ql:quickload :clouseau)
+(defvar *clouseau-inspector* nil)
+(defun clouseau-inspect (symbol)
+  (unless (and (clim:application-frame-p *clouseau-inspector*)
+               (clim-internals::frame-process *clouseau-inspector*))
+    (setf *clouseau-inspector*
+          (nth-value 1 (clouseau:inspect nil :new-process t))))
+
+  (setf (clouseau:root-object *clouseau-inspector* :run-hook-p t)
+        symbol)
+  (values))
+
+#+quicklisp (ql:quickload :bordeaux-threads)
+(defvar *watching* nil)
+
+(defun clouseau-unwatch ()
+  (bt:destroy-thread *watching*)
+  (setf *watching* nil))
+
+(defun clouseau-watch (symbol &optional (refresh 1))
+  (unless (and (clim:application-frame-p *clouseau-inspector*)
+               (clim-internals::frame-process *clouseau-inspector*))
+    (setf *clouseau-inspector*
+          (nth-value 1 (clouseau:inspect nil :new-process t))))
+
+  (when *watching*
+    (clouseau-unwatch))
+
+  (setf *watching*
+        (bt:make-thread (lambda ()
+                          (loop
+                            (setf (clouseau:root-object *clouseau-inspector* :run-hook-p t)
+                                  symbol)
+                            (sleep refresh))))))
+
+;(setf *print-case* :downcase) ; let's try it out...
+; messes up some libraries..
+
+(defun search-in-docstring (text &key (test (function search)))
+  (let ((funs '()))
+    (do-symbols (fun)
+      (when (fboundp fun)
+        (let ((docstring (documentation fun 'function)))
+          (when (and docstring
+                     (funcall test text docstring))
+            (push fun funs)))))
+    funs))

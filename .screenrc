@@ -2,7 +2,7 @@ zmodem catch
 startup_message off
 bindkey -m > eval "stuff ' '" writebuf "exec sh -c 'xsel -b < ~/.screen_exchange'"
 
-split
-screen
-focus
-screen
+#split
+#screen
+#focus
+#screen

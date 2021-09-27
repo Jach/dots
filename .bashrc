@@ -22,7 +22,7 @@ alias gccd='gcc -Wall -Wextra -ansi -pedantic'
 alias gccd32='gcc -m32 -Wall -Wextra -ansi -pedantic'
 alias g++d='g++ -g -Wall -Wextra -ansi -pedantic'
 alias g++d32='g++ -m32 -Wall -Wextra -ansi -pedantic'
-export LD_LIBRARY_PATH="/usr/lib64/panda3d/:/usr/local/lib/"
+#export LD_LIBRARY_PATH="/usr/lib64/panda3d/:/usr/local/lib/"
 export PATH="/usr/local/bin:/usr/local/sbin/:/bin:/sbin:/usr/bin:/usr/sbin:$PATH"
 export PATH="$PATH:/home/kevin/j64-602/bin/"
 export PATH="$PATH:/home/kevin/Desktop/flex_sdk_4/bin/:/opt/jswat-4.5/bin/"
@@ -90,7 +90,7 @@ alias camcam="gphoto2 --get-all-files"
 alias servertest='ab -n 10 -c 5 http://www.thejach.com/'
 
 source /usr/share/bash-completion/git-prompt.sh
-export PS1="\$(if [ \$? = 0 ]; then echo \[\e[32m\]':)'\[\e[0m\]; else echo \[\e[31m\]':('\[\e[0m\]; fi) \[\033[01;32m\]\u@\h\[\033[01;34m\] \w\$(__git_ps1) \$\[\033[00m\] "
+export PS1="\[\033]0;\u@\h:\w\007\]\$(if [ \$? = 0 ]; then echo \[\e[32m\]':)'\[\e[0m\]; else echo \[\e[31m\]':('\[\e[0m\]; fi) \[\033[01;32m\]\u@\h\[\033[01;34m\] \w\$(__git_ps1) \$\[\033[00m\] "
 
 # trying this out
 alias python='pypy'
@@ -98,7 +98,7 @@ alias python='pypy'
 # perf stat -B cmd
 alias minecraft='export LD_LIBRARY_PATH=/usr/lib/jvm/oracle-jre-bin-1.7/lib/amd64/ && java -jar minecraft.jar'
 alias pyserver='python -m SimpleHTTPServer'
-# python3: python -m http.server 8000
+alias pyserver3='python3 -m http.server 8000'
 # Note to self: traceroute -I is important (as root)
 alias pylint='pylint -r n -f colorized'
 function aesenc() {
@@ -152,7 +152,7 @@ i2pstart() {
   /usr/share/i2p/runplain.sh
 }
 
-alias sbcl='rlwrap sbcl'
+alias sbcl='rlwrap sbcl --dynamic-space-size 11gb --core ~/sbcl-core'
 
 . $HOME/git_repos/not_mine/git-issue/gi-completion.sh
 
@@ -175,6 +175,7 @@ export PATH=$PATH:$HOME/git_repos/not_mine/srt-resync
 . $HOME/.bashrc.secret
 
 
+export FZF_DEFAULT_COMMAND="ag . -l --ignore '*.fasl' --ignore '*.pyc' --nocolor --hidden"
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
 # The next line updates PATH for the Google Cloud SDK.
@@ -197,7 +198,7 @@ confirm() {
 webcam() {
   # does this still work?
   while true; do
-    fswebcam -r 1280x720 --png -1 -D 1 -S 30 --no-banner‌"/webcam/Webcam-`date +%s`".png
+    fswebcam -r 1280x720 --png -1 -D 1 -S 30 --no-banner "/webcam/Webcam-`date +%s`".png
     sleep 1200
   done
 }
@@ -205,5 +206,18 @@ webcam() {
 # set -o noclobber # forbids x > foo; protect self from overwriting foo...
 
 export ua_googlebot='Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+
+alias glxgears='__GL_SYNC_TO_VBLANK=0 glxgears'
+
+alias github_mimic='grip'
+
+export PATH=$PATH:$HOME/git_repos/not_mine/vimpager/standalone/
+
+tricks() {
+  # automate/remember e.g.
+  #WINEPREFIX=/mnt/ssd/rootfs/SteamLibrary/steamapps/compatdata/1031480/pfx/ winetricks dotnet20 dotnet461 xact gdiplus allfonts
+  game_id="$1"
+  WINEPREFIX=/mnt/ssd/rootfs/SteamLibrary/steamapps/compatdata/$game_id/pfx/ winetricks "${@:2}"
+}
 
 fortune -a

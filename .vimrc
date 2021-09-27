@@ -1,3 +1,5 @@
+set sessionoptions-=options " don't let sessions capture all global options including 'runtimepath'
+
 nnoremap <F2> :set invpaste paste?<CR>
 imap <F2> <C-O><F2>
 set pastetoggle=<F2>
@@ -21,14 +23,14 @@ set wildignore+=*.swp,*.fasl,*.o " don't show these in tab completed list
 set showcmd " ensures chording/command preview is shown as you type
 set scrolloff=2 " scrolling starts two lines from bottom instead of bottom
 "set tw=80 " textwidth 80 chars, auto-insert line breaks
-set colorcolumn=120 " visible color column at character offset to remind about long lines
+"set colorcolumn=120 " visible color column at character offset to remind about long lines
 set linebreak " for display only; instead of line-wrapping at the last character of the line, breaks the line at a space or other custom char
 "set formatoptions+=t
-set runtimepath+=/home/kevin/.vim/marc-plugins/vim-addon-manager
+"set runtimepath+=/home/kevin/.vim/marc-plugins/vim-addon-manager
 " activate the addons called 'vim-addon-manager', 'JSON', 'name1', 'name2'
 " This adds them to runtimepath and ensures that plugin/* and after/plugin/*
 " files are sourced
-call scriptmanager#Activate(['vim-addon-manager','JSON',"vim-addon-fcsh"])
+"call scriptmanager#Activate(['vim-addon-manager','JSON',"vim-addon-fcsh"])
 filetype plugin indent on
 "syntax on " ubuntu specific
 set nohls " no search highlights after searching
@@ -88,6 +90,9 @@ au BufNewFile,BufRead *.md set tw=80 " enforce text width
 au BufNewFile,BufRead *.cljs set filetype=clojure
 au BufNewFile,BufRead *.asd set filetype=lisp
 au BufNewFile,BufRead *.ros set filetype=lisp
+au BufnewFile,BufRead *.ten set filetype=html
+au BufEnter *.lisp :syntax sync fromstart " a bit extreme, but guarantees we won't lose syntax highlighting...
+" may need to adjust redrawtime to a bigger value if we find a big slow file
 
 map \cbase i#include <stdio.h><ESC>2o<ESC>iint main(void) {<ESC>2o<ESC>i  return 0;<ESC>o<ESC>i}<ESC>
 map \jbase ipublic class FileName {<ESC>2o<ESC>i  public static void main(String args[]) {<ESC>3o<ESC>i  }<ESC>o<ESC>i}<ESC>
@@ -144,9 +149,6 @@ set maxmem=104857600
 set maxmemtot=104857600
 set maxmempattern=300000
 
-execute pathogen#infect()
-Helptags
-
 " line:
 nmap <c-c><c-l> <Plug>SlimeLineSend
 nmap \in ain-<ESC>wi'<ESC>$a)<ESC><s-v><Plug>SlimeRegionSend<ESC>uuuh
@@ -161,7 +163,7 @@ nmap <c-c><c-m> i(macroexpand-1 '<ESC>l%a)<ESC>%v%<Plug>SlimeRegionSend<ESC>uu
 
 augroup myvimrc
   au!
-  au BufWritePost .vimrc,_vimrc,vimrc,.gvimrc,_gvimrc,gvimrc so $MYVIMRC | if has('gui_running') | so $MYGVIMRC | endif
+  au BufWritePost .vimrc,_vimrc,vimrc,.gvimrc,_gvimrc,gvimrc so $MYVIMRC " | if has('gui_running') | so $MYGVIMRC | endif
 augroup END
 
 "nnoremap <F3> :NumbersOnOff<cr>
@@ -201,7 +203,7 @@ map \lp :call LocFix(":lprev")<cr>
 let g:syntastic_cpp_checkers = ['cppcheck', 'gcc']
 let g:syntastic_c_checkers = ['cppcheck', 'splint', 'gcc']
 let g:syntastic_asciidoc_checkers = []
-let g:syntastic_python_checkers = ['pylint'] " seemed to have changed default to flake8, boo
+"let g:syntastic_python_checkers = ['pylint'] " seemed to have changed default to flake8, boo
 " though both are very slow...
 
 let g:sexp_enable_insert_mode_mappings = 0
@@ -229,26 +231,29 @@ map \what :echo expand('%:p')<cr>
 " slimv
 let g:paredit_mode=0
 let g:lisp_rainbow=1
-" doc in slimv.txt but most useful:
-" ,s describes symbol
+" doc in slimv.txt but most useful: (adding vlime equivalents to right...
+" though vlime doesn't fit me)
+" ,s describes symbol ::: \do, \da
 " ,h looks up symbol in hyperspec
-" ,d evaluates form
+" ,d evaluates form ::: \st
 " ,D compiles DeFun
 " ,L compile and load current file
 " ,F compiles file
 " ,b eval buffer
 " ,u undefine function
-" ,e evals current exp
-" ,r evals 'region' or selection
+" ,e evals current exp :::  \ss or \se, \ss handles atoms
+" ,r evals 'region' or selection :::  \s after selecting
 " ,g set-package
 " ctrl+x + 0 => close form
-" ,1 macroexpand-1
-" ,m macroexpand all
+" ,1 macroexpand-1 ::: \m1
+" ,m macroexpand all ::: \mm
 " ,B set breakpoint
 " ,l disassemble
 " ,a abort
 " ,v eval-in-debug-frame. e.g. (swank-backend:restart-frame idx)
 "      (swank-backend:activate-stepping frame) (swank-backend:sldb-step-into) (swank-backend:sldb-step-next) (swank-backend:sldb-step-out)
+"      ,a abort, ,q quit, ,n continue, ,N restart frame,
+"      ,si step-into, ,sn step-next, ,so step-out
 " ,i inspect frame
 " ,n continue
 " ,- clear repl
@@ -263,15 +268,22 @@ let g:lisp_rainbow=1
 "    ,xe          List Callees
 let g:slimv_repl_split=2
 let g:slimv_repl_split_size=20
+
+let g:vlime_window_settings = {
+  \ "repl": { -> {"size": 20}},
+  \ "arglist": { -> {"pos": "belowright"}},
+  \ "preview": { -> {"pos": "belowright"}}
+  \ }
+
 " ctags -R -a --language-force=lisp ~/quicklisp/dists/quicklisp/software
 "let g:slimv_unmap_tab=1
 "let g:slimv_ctags='ctags -R -a --language-force=lisp *'
-let g:slimv_swank_cmd='!xterm -e sbcl --dynamic-space-size 10000 --load /home/kevin/.vim/bundle/slimv/slime/start-swank.lisp &'
-" when using cross ref, jump to file name printed in repl
-" and move it to other window, then switch back to repl
-map \jf gf<cr>:call WindowSwap#EasyWindowSwap()<cr><C-w>w:call WindowSwap#EasyWindowSwap()<cr><C-w>w<C-o><C-o>
+let g:slimv_swank_cmd='!xterm -e sbcl --dynamic-space-size 10GB --core ~/sbcl-core --load /home/kevin/.vim/bundle/slimv/slime/start-swank.lisp &'
+" when using cross ref, jump to file name printed in repl with gF (gf to not
+" hit line number). ctrl+o to jump back to repl buf.
+map \jf gF<esc>:call WindowSwap#EasyWindowSwap()<cr><C-w>w:call WindowSwap#EasyWindowSwap()<cr><C-w>w<C-o><C-o><C-w>w
+" ctrl+t to jump back after a ] jump., ctrl+o/ctrl+i to toggle back/forth...
 " note that ctrl+] for def (works for make-instance args)
-" ctrl+t to jump back, ctrl+o/ctrl+i to toggle back/forth...
 
 "let g:vlime_compiler_policy = {"DEBUG": 3}
 
@@ -306,6 +318,27 @@ map ,xd :call SlimvXrefSysDependsOn()<cr>
 
 map ,xx :call SlimvXrefEditUses()<cr>
 
+" load/reload system, assuming current package is also system name and ql
+" knows about it...
+map ,Ls :call SlimvFindPackage()<cr>:call SlimvEval(['(ql:quickload (string-downcase (package-name *package*)))'])<cr>
+
+" Inspect, but using clouseau
+function! SlimvClouseauInspect()
+    if !SlimvConnectSwank()
+        return
+    endif
+    let s:inspect_path = []
+    let s = input( 'Clouseau Inspect: ', SlimvSelectSymbolExt() )
+    if s != ''
+      let s:inspect_path = [s]
+      "call SlimvCommandUsePackage( s:py_cmd . 'swank_inspect("' . s . '")' )
+      call SlimvFindPackage()
+      call SlimvEval(['(cl-user::clouseau-inspect ' . s . ')'])
+    endif
+endfunction
+
+map ,ci :call SlimvClouseauInspect()<cr>
+
 function! StripTrailingWhitespace()
   normal mZ
   %s/\s\+$//e
@@ -323,5 +356,15 @@ set rtp+=/home/kevin/git_repos/not_mine/fzf
 "let g:ctrlp_map='<c-`>'
 map <c-p> :FZF<cr>
 
-" DoPrettyXML
+let g:rooter_patterns = ['.git', '.git/', '_darcs/', '.hg/', '.bzr/', '.svn/', '.fslckout']
+let g:rooter_change_directory_for_non_project_files = 'current'
+" when rooter or whatever fails...
+map \fixdir :cd %:h
+
+set cmdheight=3 " avoids having to press enter so much e.g. when cwd changes because of rooter
+
+cs add $CSCOPE_DB
+
+execute pathogen#infect()
+Helptags
 

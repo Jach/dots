@@ -17,7 +17,7 @@
    and the rest is the list of packages"
   (declare (ignorable type))
   (loop for dependency in (rest (first (asdf:component-depends-on 'asdf:operation thing)))
-        for asd-file = (asdf:system-definition-pathname dependency)
+        for asd-file = (asdf:system-source-file dependency)
         when asd-file
         collect (list dependency
                       (swank/backend:make-location

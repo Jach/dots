@@ -6,6 +6,7 @@ try-nerdtree-again
 try-tagbar
 vim-bbye
 vim-buftabline
+vim-eunuch
 vim-fugitive
 vim-javascript
 vim-obsession
