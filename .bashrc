@@ -220,4 +220,11 @@ tricks() {
   WINEPREFIX=/mnt/ssd/rootfs/SteamLibrary/steamapps/compatdata/$game_id/pfx/ winetricks "${@:2}"
 }
 
+# Make certain directories, especially on ntfs mounted systems,
+# not have an ugly green bg color when using ls and use no bg-color.
+# ow = other, writable
+# tw = sticky, writable.
+# Recall color code has three columns: bold;font-color;bg-color.
+export LS_COLORS="$LS_COLORS:ow=1;34:tw=1;34:"
+
 fortune -a

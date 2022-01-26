@@ -249,6 +249,7 @@ let g:lisp_rainbow=1
 " ,m macroexpand all ::: \mm
 " ,B set breakpoint
 " ,l disassemble
+" ,fe funcall no-arg symbol name under cursor
 " ,a abort
 " ,v eval-in-debug-frame. e.g. (swank-backend:restart-frame idx)
 "      (swank-backend:activate-stepping frame) (swank-backend:sldb-step-into) (swank-backend:sldb-step-next) (swank-backend:sldb-step-out)
@@ -338,6 +339,7 @@ function! SlimvClouseauInspect()
 endfunction
 
 map ,ci :call SlimvClouseauInspect()<cr>
+map ,fc  :call SlimvFindPackage()<cr>:call SlimvEval(['(' . SlimvSelectSymbolExt() . ')'])<cr>
 
 function! StripTrailingWhitespace()
   normal mZ
@@ -356,7 +358,7 @@ set rtp+=/home/kevin/git_repos/not_mine/fzf
 "let g:ctrlp_map='<c-`>'
 map <c-p> :FZF<cr>
 
-let g:rooter_patterns = ['.git', '.git/', '_darcs/', '.hg/', '.bzr/', '.svn/', '.fslckout']
+let g:rooter_patterns = ['README.md', '.git', '.git/', '_darcs/', '.hg/', '.bzr/', '.svn/', '.fslckout']
 let g:rooter_change_directory_for_non_project_files = 'current'
 " when rooter or whatever fails...
 map \fixdir :cd %:h
