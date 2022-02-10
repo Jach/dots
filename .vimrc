@@ -299,6 +299,7 @@ autocmd BufReadPre * let f=expand("<afile>") | if getfsize(f)
             \ > g:large_file | set noswapfile | endif
 
 map \justify gwip
+set nojoinspaces " don't double-space after periods...
 "map \table :TableModeToggle
 "already \tm
 " use || for boundary row
@@ -420,6 +421,7 @@ command! Todo :Grepper -noprompt -query '(todo|fixme)'
 "
 " also generally useful, :cclose to close the quickfix window e.g. after
 " jumping to a file
+" and <c-w><c-p> to jump back to quickfix window if not wanting to close
 "
 
 let g:ale_warn_about_trailing_whitespace=0
@@ -433,19 +435,23 @@ function! StripTrailingWhitespace()
 endfunction
 autocmd BufWritePre * :call StripTrailingWhitespace()
 
-set autochdir
+"set autochdir
 
 set rtp+=~/git_repos/not_mine/fzf
 " remap ctrl-p, fzf is better...
 "let g:ctrlp_map='<c-`>'
 map <c-p> :FZF<cr>
 
-"let g:rooter_patterns = ['README.md', '.git', '.git/', '_darcs/', '.hg/', '.bzr/', '.svn/', '.fslckout']
-"let g:rooter_change_directory_for_non_project_files = 'current'
+let g:rooter_patterns = ['.git', '_darcs/', '.hg/', '.bzr/', '.svn/', '.fslckout']
+let g:rooter_change_directory_for_non_project_files = 'current'
 " when rooter or whatever fails...
 map \fixdir :cd %:h
 
-set cmdheight=3 " avoids having to press enter so much e.g. when cwd changes because of rooter
+"set cmdheight=3 " avoids having to press enter so much e.g. when cwd changes because of rooter
+let g:rooter_silent_chdir = 1
+
+" right-align from 80th col
+nnoremap \<tab> mc80A <esc>080lDgelD`cP
 
 cs add $CSCOPE_DB
 
