@@ -23,7 +23,7 @@ set wildignore+=*.swp,*.fasl,*.o " don't show these in tab completed list
 set showcmd " ensures chording/command preview is shown as you type
 set scrolloff=2 " scrolling starts two lines from bottom instead of bottom
 "set tw=80 " textwidth 80 chars, auto-insert line breaks
-"set colorcolumn=120 " visible color column at character offset to remind about long lines
+"set colorcolumn=80 " visible color column at character offset to remind about long lines
 set linebreak " for display only; instead of line-wrapping at the last character of the line, breaks the line at a space or other custom char
 "set formatoptions+=t
 "set runtimepath+=/home/kevin/.vim/marc-plugins/vim-addon-manager
@@ -224,7 +224,7 @@ map \ngt :tab split<CR>:call JumpToDef()<CR>
 " uncomment above if experiencing syntax highlight problems,
 " should force buffer to redo syntax...
 
-" set dir=~/tmp/vim/
+set dir=~/.vim/swpfiles
 " uncomment above to make vim swapfiles files stop showing up in project folders
 map \what :echo expand('%:p')<cr>
 
@@ -269,6 +269,10 @@ let g:lisp_rainbow=1
 "    ,xe          List Callees
 let g:slimv_repl_split=2
 let g:slimv_repl_split_size=20
+let g:scheme_builtin_swank=1
+let g:slimv_timeout=10
+let g:slimv_fasl_directory = '/tmp/'
+let g:slimv_swank_cmd='!xterm -iconic -e sbcl --dynamic-space-size 10GB --core ~/sbcl-core --load /home/kevin/.vim/bundle/slimv/slime/start-swank.lisp &'
 
 let g:vlime_window_settings = {
   \ "repl": { -> {"size": 20}},
@@ -279,12 +283,13 @@ let g:vlime_window_settings = {
 " ctags -R -a --language-force=lisp ~/quicklisp/dists/quicklisp/software
 "let g:slimv_unmap_tab=1
 "let g:slimv_ctags='ctags -R -a --language-force=lisp *'
-let g:slimv_swank_cmd='!xterm -e sbcl --dynamic-space-size 10GB --core ~/sbcl-core --load /home/kevin/.vim/bundle/slimv/slime/start-swank.lisp &'
+
 " when using cross ref, jump to file name printed in repl with gF (gf to not
 " hit line number). ctrl+o to jump back to repl buf.
-map \jf gF<esc>:call WindowSwap#EasyWindowSwap()<cr><C-w>w:call WindowSwap#EasyWindowSwap()<cr><C-w>w<C-o><C-o><C-w>w
+map \gF gF<esc>:call WindowSwap#EasyWindowSwap()<cr><C-w>w:call WindowSwap#EasyWindowSwap()<cr><C-w>w<C-o><C-o>G<C-w>w
 " ctrl+t to jump back after a ] jump., ctrl+o/ctrl+i to toggle back/forth...
 " note that ctrl+] for def (works for make-instance args)
+map \sblint :e! scratch<cr>:1,$d<cr>:silent r!sblint<cr>
 
 "let g:vlime_compiler_policy = {"DEBUG": 3}
 
@@ -319,9 +324,12 @@ map ,xd :call SlimvXrefSysDependsOn()<cr>
 
 map ,xx :call SlimvXrefEditUses()<cr>
 
+map ,xg :call SlimvXrefBase('Who Specializes Generally: ', ':specializes-generally')<cr>
+
 " load/reload system, assuming current package is also system name and ql
 " knows about it...
 map ,Ls :call SlimvFindPackage()<cr>:call SlimvEval(['(ql:quickload (string-downcase (package-name *package*)))'])<cr>
+" better to just ,v and ql yourself
 
 " Inspect, but using clouseau
 function! SlimvClouseauInspect()
@@ -341,6 +349,80 @@ endfunction
 map ,ci :call SlimvClouseauInspect()<cr>
 map ,fc  :call SlimvFindPackage()<cr>:call SlimvEval(['(' . SlimvSelectSymbolExt() . ')'])<cr>
 
+" Refactoring tricks...
+
+" symbol -> quoted string
+" #:blah -> "blah"
+" #'func -> "func"
+" :foo -> "foo"
+" 'some-symbol -> "some-symbol"
+" unquoted:symbol -> "unquoted:symbol"
+" `quasi -> "quasi"
+" ,escaped -> "escaped"
+function! RefactorSymbolToString()
+  " Depends on vim-surround / vim-sexp-mappings-for-regular-people...
+  " should use n2char(getchar())? though surround.vim has its own s:getchar()
+  let cursor_col_idx = col('.') - 1
+  let cur_line = getline('.')
+  let cur_char = cur_line[cursor_col_idx]
+  setlocal iskeyword+=#
+  setlocal iskeyword+='
+  setlocal iskeyword+=`
+  setlocal iskeyword+=,
+  let cur_word_col_idx = strridx(cur_line, expand('<cword>'), cursor_col_idx)
+  setlocal iskeyword-=,
+  setlocal iskeyword-=`
+  setlocal iskeyword-='
+  setlocal iskeyword-=#
+  " note not using <cWORD> since I think that includes too much...
+  "let is_on_keyword = (cur_word_col_idx >=0 && (cur_word_col_idx + strlen(expand('<cword>')) >= cursor_col_idx))
+  let is_at_start_keyword = (cur_word_col_idx == cursor_col_idx)
+  if !is_at_start_keyword
+    " move to it
+    "execute 'normal! B'
+    call sexp#move_to_adjacent_element('n', v:count, 0, 0, 0)
+    " don't infinite loop..
+    if getline('.')[col('.')-1] == '"'
+      return
+    endif
+    return RefactorSymbolToString()
+  endif
+  if cur_char == '#' || cur_char == ':' || cur_char == "'" || cur_char == '`' || cur_char == ','
+    execute 'normal! x'
+    return RefactorSymbolToString()
+  endif
+  " need this instead of usual ysiw"
+  execute 'normal! g@iw"'
+endfunction
+
+map \rf2s :call RefactorSymbolToString()<cr>W
+" tempted to have refactoring shortcuts
+" bind macro @r to the last refactor for even shorter
+" quick repetition...
+
+let g:grepper = {}
+let g:grepper.tools = ['ag']
+let g:grepper.dir = 'repo,cwd'
+command! Todo :Grepper -noprompt -query '(todo|fixme)'
+
+" general mass-rename:
+" :Grepper -noprompt -query symbol
+" (can use cword, or just :Grepper<cr> and type it in
+" populates both quickfix list and location list.
+" :cdo %s/symbol/replacement/gce
+" -> run search-replace over all quickfix spots. the e suppresses errors.
+"  (also can use (Subvert)
+" :cdo update
+" -> saves buffers
+"  (can just add this to the end of the other cdo command as | update)
+" :cdfo :bd
+" -> close the buffers
+"
+" also generally useful, :cclose to close the quickfix window e.g. after
+" jumping to a file
+"
+
+let g:ale_warn_about_trailing_whitespace=0
 function! StripTrailingWhitespace()
   normal mZ
   %s/\s\+$//e
@@ -353,13 +435,13 @@ autocmd BufWritePre * :call StripTrailingWhitespace()
 
 set autochdir
 
-set rtp+=/home/kevin/git_repos/not_mine/fzf
+set rtp+=~/git_repos/not_mine/fzf
 " remap ctrl-p, fzf is better...
 "let g:ctrlp_map='<c-`>'
 map <c-p> :FZF<cr>
 
-let g:rooter_patterns = ['README.md', '.git', '.git/', '_darcs/', '.hg/', '.bzr/', '.svn/', '.fslckout']
-let g:rooter_change_directory_for_non_project_files = 'current'
+"let g:rooter_patterns = ['README.md', '.git', '.git/', '_darcs/', '.hg/', '.bzr/', '.svn/', '.fslckout']
+"let g:rooter_change_directory_for_non_project_files = 'current'
 " when rooter or whatever fails...
 map \fixdir :cd %:h
 
