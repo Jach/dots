@@ -26,14 +26,22 @@
                         `(:snippet ,(format nil "(defsystem :~A" dependency)
                           :align t)))))
 
+(defmethod xref-doit ((type (eql :specializes-generally)) thing)
+  (swank/sbcl::sanitize-xrefs
+    (mapcar #'swank/sbcl::source-location-for-xref-data
+            (sb-introspect:who-specializes-generally thing))))
+
 (defmethod xref-doit ((type (eql :edit-uses)) thing)
   "Looks up each of calls, macroexpands, binds, references, sets,
    and specializes for the symbol specified by thing. The lazy-man's xref call.
    Based on slime-edit-uses."
   (declare (ignorable type))
   (let (result)
-    (dolist (xref '(:calls :macroexpands :binds :references :sets :specializes))
-      (setf result (append result
-                           (xref-doit xref thing))))
+    (dolist (xref '(:calls :macroexpands :binds :references :sets :specializes :specializes-generally))
+      (let ((it (xref-doit xref thing)))
+        (if (typep it 'list)
+            (setf result (append result
+                                 it))
+            )))
     result))
 
