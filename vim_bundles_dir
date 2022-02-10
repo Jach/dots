@@ -1,14 +1,11 @@
-nimrod.vim
+ale
 slimv
-syntastic
-try-neocomplete
-try-nerdtree-again
-try-tagbar
+vim-abolish
 vim-bbye
 vim-buftabline
 vim-eunuch
 vim-fugitive
-vim-javascript
+vim-grepper
 vim-obsession
 vim-repeat
 vim-rooter
@@ -17,3 +14,12 @@ vim-sexp-mappings-for-regular-people
 vim-surround
 vim-table-mode
 vim-windowswap
+
+# not on new machine:
+# nimrod.vim
+# vim-javascript
+
+# things I should try (again) and decide whether they're useful:
+# neocomplete
+# nerdtree-plugin
+# tagbar
