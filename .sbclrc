@@ -9,7 +9,7 @@
   (ql:update-client)
   (ql:update-all-dists))
 
-(defun update-sbcl-core ()
+(defun dump-core ()
   ; make sure to update-ql and restart sbcl first
   ; add any quickloads here that we might want as part of core not captured by .sbclrc
   ; numcl, vgplot
