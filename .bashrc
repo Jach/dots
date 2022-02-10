@@ -16,6 +16,7 @@ fi
 
 
 # Put your fun stuff here.
+export EDITOR=vim
 alias l='ls'
 alias lm='ls -lh'
 alias gccd='gcc -Wall -Wextra -ansi -pedantic'
@@ -28,7 +29,6 @@ export PATH="$PATH:/home/kevin/j64-602/bin/"
 export PATH="$PATH:/home/kevin/Desktop/flex_sdk_4/bin/:/opt/jswat-4.5/bin/"
 export PATH="$PATH:/home/kevin/Desktop/flash_player_10_linux_dev/standalone/debugger/"
 export PATH="$PATH:/home/kevin/luciddb-0.0.0/bin/:/home/kevin/p4s/"
-export CLASSPATH="$CLASSPATH:.:/usr/share/jdbc-mysql/lib/jdbc-mysql.jar"
 export PYTHONSTARTUP=$HOME'/.pythonrc.py'
 
 function ltxm() {
@@ -77,7 +77,6 @@ alias gccsec='gcc -fmudflap -fstack-check -gnato'
 # stack overflow prot., int overflow
 #define likely(x) __builtin_expect((x),1)
 #define unlikely(x) __builtin_expect((x),0)
-export CLASSPATH=$CLASSPATH:/usr/share/jline/lib/jline.jar:/home/kevin/clojure-1.2.1/clojure.jar
 export PATH=$PATH:$HOME/git_repos/clojurescript/script/repl:$HOME/git_repos/clojurescript/script/repljs:$HOME/git_repos/clojurescript/bin/
 export CLOJURESCRIPT_HOME=$HOME/git_repos/clojurescript
 #alias clj="java -cp $HOME/clojure-1.3.0/jline-0.9.94.jar:$HOME/clojure-1.3.0/math.combinatorics.jar:$HOME/clojure-1.3.0/clojure.jar jline.ConsoleRunner clojure.main"
@@ -93,7 +92,7 @@ source /usr/share/bash-completion/git-prompt.sh
 export PS1="\[\033]0;\u@\h:\w\007\]\$(if [ \$? = 0 ]; then echo \[\e[32m\]':)'\[\e[0m\]; else echo \[\e[31m\]':('\[\e[0m\]; fi) \[\033[01;32m\]\u@\h\[\033[01;34m\] \w\$(__git_ps1) \$\[\033[00m\] "
 
 # trying this out
-alias python='pypy'
+#alias python='pypy'
 # rlwrap
 # perf stat -B cmd
 alias minecraft='export LD_LIBRARY_PATH=/usr/lib/jvm/oracle-jre-bin-1.7/lib/amd64/ && java -jar minecraft.jar'
@@ -175,7 +174,8 @@ export PATH=$PATH:$HOME/git_repos/not_mine/srt-resync
 . $HOME/.bashrc.secret
 
 
-export FZF_DEFAULT_COMMAND="ag . -l --ignore '*.fasl' --ignore '*.pyc' --nocolor --hidden"
+#export FZF_DEFAULT_COMMAND="ag . -l --ignore '*.fasl' --ignore '*.pyc' --nocolor --hidden"
+export FZF_DEFAULT_COMMAND="ag -l"
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
 # The next line updates PATH for the Google Cloud SDK.
@@ -226,5 +226,13 @@ tricks() {
 # tw = sticky, writable.
 # Recall color code has three columns: bold;font-color;bg-color.
 export LS_COLORS="$LS_COLORS:ow=1;34:tw=1;34:"
+
+#export GTK_IM_MODULE=ibus
+#export XMODIFIERS=@im=ibus
+#export QT_IM_MODULE=ibus
+
+trace_env_vars() {
+  PS4='+$BASH_SOURCE> ' BASH_XTRACEFD=7 bash -xl 7> /tmp/file.log
+}
 
 fortune -a
