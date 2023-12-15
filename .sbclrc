@@ -91,7 +91,8 @@
 ;  (sb-ext:restrict-compiler-policy 'safety 3)
 ;  (sb-ext:restrict-compiler-policy 'debug 3))
 
-#+quicklisp (ql:quickload 'cmu-infix)
+(unless (find-package :cmu-infix)
+  #+quicklisp (ql:quickload 'cmu-infix))
 #+quicklisp (named-readtables:in-readtable cmu-infix:syntax)
 
 ;(format t "Your cwd is ~s.~%" (sb-posix:getcwd))
@@ -106,7 +107,8 @@
                                         (read-line stream nil (values) t)
                                         (values)))
 
-#+quicklisp (ql:quickload :clouseau)
+
+#|#+quicklisp (ql:quickload :clouseau)
 (defvar *clouseau-inspector* nil)
 (defun clouseau-inspect (symbol)
   (unless (and (clim:application-frame-p *clouseau-inspector*)
@@ -141,6 +143,9 @@
                                   symbol)
                             (sleep refresh))))))
 
+|#
+
+
 ;(setf *print-case* :downcase) ; let's try it out...
 ; messes up some libraries..
 
@@ -153,3 +158,6 @@
                      (funcall test text docstring))
             (push fun funs)))))
     funs))
+
+(defun asdf-here ()
+  (push (uiop:getcwd) asdf:*central-registry*))

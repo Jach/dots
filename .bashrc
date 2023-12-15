@@ -31,6 +31,8 @@ export PATH="$PATH:/home/kevin/Desktop/flash_player_10_linux_dev/standalone/debu
 export PATH="$PATH:/home/kevin/luciddb-0.0.0/bin/:/home/kevin/p4s/"
 export PYTHONSTARTUP=$HOME'/.pythonrc.py'
 
+alias rot13="tr 'A-Za-z' 'N-ZA-Mn-za-m'"
+
 function ltxm() {
   latexmk -silent -pdf $@
 }
@@ -42,6 +44,10 @@ function ltx() {
 # pdflatex -interaction=batchmode file.tex
 # bibtex file
 # and rerun pdflatex twice, use ltxc to cleanup if you want
+
+cdl () {
+      cd "$(dirname "$(readlink "$1")")";
+}
 
 alias ip='curl www.nincheats.net/ip.php'
 alias py_prof='python -m cProfile'
@@ -95,7 +101,7 @@ export PS1="\[\033]0;\u@\h:\w\007\]\$(if [ \$? = 0 ]; then echo \[\e[32m\]':)'\[
 #alias python='pypy'
 # rlwrap
 # perf stat -B cmd
-alias minecraft='export LD_LIBRARY_PATH=/usr/lib/jvm/oracle-jre-bin-1.7/lib/amd64/ && java -jar minecraft.jar'
+#alias minecraft='export LD_LIBRARY_PATH=/usr/lib/jvm/oracle-jre-bin-1.7/lib/amd64/ && java -jar minecraft.jar'
 alias pyserver='python -m SimpleHTTPServer'
 alias pyserver3='python3 -m http.server 8000'
 # Note to self: traceroute -I is important (as root)
@@ -235,4 +241,45 @@ trace_env_vars() {
   PS4='+$BASH_SOURCE> ' BASH_XTRACEFD=7 bash -xl 7> /tmp/file.log
 }
 
+vid2cam() {
+#https://rmsol.de/2020/04/25/v4l2/
+  ffmpeg -stream_loop -1 -re -i "$1" -f v4l2 /dev/video2
+}
+
+#alias ocr='xclip -selection clipboard <<< $(gazou -h 2> /dev/null)'
+alias ocr='scrot -s -F - | gazou'
+
+nicer() {
+  ionice -c3 nice "$@"
+}
+
+curltime() {
+  curl -L -w "time_namelookup: %{time_namelookup}\ntime_connect: %{time_connect}\ntime_appconnect: %{time_appconnect}\ntime_pretransfer: %{time_pretransfer}\ntime_redirect: %{time_redirect}\ntime_starttransfer: %{time_starttransfer}\ntime_total: %{time_total}\n" "$1"
+}
+
+livetl() {
+  whisper-ctranslate2 --language Japanese --task translate --live_transcribe True --model large-v2 --live_volume_threshold 0.03
+}
+
+whisper-stdout() {
+  lang='Japanese'
+  task='translate'
+  if [ "$2" != "" ]; then
+    # meant to just transcribe e.g. english
+    lang=$2
+    task='transcribe'
+  fi
+  whisper-ctranslate2 --language "$lang" --task $task --model large-v2 --condition_on_previous_text False -f txt "$1"
+  bn="${1%.*}"
+  rm "$bn".txt
+}
+
+whisper-jp() {
+  whisper-ctranslate2 --language Japanese --task translate --model large-v2 -f srt --condition_on_previous_text False "$1"
+}
+
 fortune -a
+
+# leave commented out?
+#export PATH="/home/kevin/apps/miniconda3/bin:$PATH"  # commented out by conda initialize
+

@@ -3,7 +3,7 @@ set sessionoptions-=options " don't let sessions capture all global options incl
 nnoremap <F2> :set invpaste paste?<CR>
 imap <F2> <C-O><F2>
 set pastetoggle=<F2>
-set hidden " keep buffers open without necessarily displaying them
+set hidden " keep buffers open without necessarily displaying them, or switching them without having to save them
 " note to self, <leader> is typically \...
 
 " looking for a more intuitive way to handle closing buffers when the
@@ -273,6 +273,8 @@ let g:scheme_builtin_swank=1
 let g:slimv_timeout=10
 let g:slimv_fasl_directory = '/tmp/'
 let g:slimv_swank_cmd='!xterm -iconic -e sbcl --dynamic-space-size 10GB --core ~/sbcl-core --load /home/kevin/.vim/bundle/slimv/slime/start-swank.lisp &'
+"let g:swank_log=1
+" also consider in vim :set verbosefile=test.log && :set verbose=20
 
 let g:vlime_window_settings = {
   \ "repl": { -> {"size": 20}},
@@ -426,6 +428,8 @@ command! Todo :Grepper -noprompt -query '(todo|fixme)'
 
 let g:ale_warn_about_trailing_whitespace=0
 function! StripTrailingWhitespace()
+  "random note, should use normal! instead, which avoids
+  "custom mappings
   normal mZ
   %s/\s\+$//e
   if line("'Z") != line(".")
@@ -454,6 +458,18 @@ let g:rooter_silent_chdir = 1
 nnoremap \<tab> mc80A <esc>080lDgelD`cP
 
 cs add $CSCOPE_DB
+
+":verbose set bg?
+"echo g:colors_name
+
+" Align line-wise comment delimiters flush left instead of following code indentation
+let g:NERDDefaultAlign = 'left'
+" Add spaces after comment delimiters by default
+let g:NERDSpaceDelims = 1
+" Allow commenting and inverting empty lines (useful when commenting a region)
+let g:NERDCommentEmptyLines = 1
+
+set clipboard=unnamedplus "automatically make yank/delete use system clipboard
 
 execute pathogen#infect()
 Helptags
