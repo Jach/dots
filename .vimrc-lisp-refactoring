@@ -1,0 +1,523 @@
+" Requirements:
+" SBCL (reach out if you'd like me to investigate for you how to get these working in another impl)
+" slimv https://github.com/kovisoft/slimv/
+" vim-sexp https://github.com/guns/vim-sexp
+"   (however I also recommend vim-sexp-mappings-for-regular-people https://github.com/tpope/vim-sexp-mappings-for-regular-people)
+
+
+""""
+" general purpose helper functions:
+""""
+
+function! SlimvEvalQuiet(exp)
+  " Runs exp in the connected Lisp without showing it or its output in the REPL
+  " Need to escape any double quotes in exp...
+  if SlimvConnectSwank()
+    call SlimvFindPackage()
+    let l:result = trim(SlimvCommandGetResponse(':pprint-eval', 'python3 swank_pprint_eval("' . a:exp . '")', 0))
+    return l:result
+  endif
+endfunction
+
+function! UndoubleQuote(str)
+  " given string with a value of `"value"`, strip its surrounding double quotes
+  return substitute(a:str, '^"\(.\{-}\)"$', '\1', '')
+endfunction
+
+function! GetPackageSrc(pkg_name)
+  " consider using shinmera's https://shinmera.github.io/definitions/ if you
+  " need ccl / clasp support...
+  if a:pkg_name == ''
+    let l:pkg = '*package*'
+  else
+    let l:pkg = '(find-package \"' . toupper(a:pkg_name) . '\")'
+  endif
+
+  let l:script='
+\ (let* ((src (sb-introspect:find-definition-source ' . l:pkg . '))
+\        (path (sb-introspect:definition-source-pathname src))
+\        (form (sb-introspect:definition-source-form-path src))
+\        (form-number (sb-introspect:definition-source-form-number src))
+\        (offset (sb-introspect:definition-source-character-offset src)))
+\   (declare (ignore form form-number offset))
+\   (namestring (or path \"\")))'
+  let l:filename=SlimvEvalQuiet(l:script)
+  return UndoubleQuote(l:filename)
+endfunction
+
+function! GetPackageName()
+  return tolower(UndoubleQuote(SlimvEvalQuiet('(package-name *package*)')))
+endfunction
+
+function! FindDefPackageLine(pkg_name)
+  " Try to find package name for various formats:
+  " (defpackage foo
+  " (defpackage :foo
+  " (defpackage #:foo
+  " (defpackage "FOO"
+  " (defpackage FOO
+  " and above with any spaces/tabs/newlines between the two symbols,
+  " and all case-insensitively (the \c),
+  " and also allowing variants like (cl:defpackage or (uiop:define-package
+let l:patterns = [
+    \ '\c(\(cl:\)\?defpackage\_s\+' . a:pkg_name . '\($\|\_s\|)\|(\)',
+    \ '\c(\(cl:\)\?defpackage\_s\+:' . a:pkg_name . '\($\|\_s\|)\|(\)',
+    \ '\c(\(cl:\)\?defpackage\_s\+#:' . a:pkg_name . '\($\|\_s\|)\|(\)',
+    \ '\c(\(cl:\)\?defpackage\_s\+"' . toupper(a:pkg_name) . '"\($\|\_s\|)\|(\)',
+    \ '\c(\(uiop:\)\?define-package\_s\+' . a:pkg_name . '\($\|\_s\|)\|(\)',
+    \ '\c(\(uiop:\)\?define-package\_s\+:' . a:pkg_name . '\($\|\_s\|)\|(\)',
+    \ '\c(\(uiop:\)\?define-package\_s\+#:' . a:pkg_name . '\($\|\_s\|)\|(\)',
+    \ '\c(\(uiop:\)\?define-package\_s\+"' . toupper(a:pkg_name) . '"\($\|\_s\|)\|(\)'
+    \ ]
+
+  for l:pattern in l:patterns
+    let l:pkg_start_line = search(l:pattern, 'w')
+    if l:pkg_start_line > 0
+      return l:pkg_start_line
+    endif
+  endfor
+  return 0 " failure, like search itself
+endfunction
+
+function! GetSymbolPackage(symbol)
+  " Gets the package name of the symbol. Assumes symbols are not |caseSensitive|.
+  let l:script = '(let ((sym (find-symbol \"' . toupper(a:symbol) . '\"))) (when sym (package-name (symbol-package sym))))'
+  let l:result = SlimvEvalQuiet(l:script)
+  return UndoubleQuote(l:result)
+endfunction
+
+function! FindSymbolWithApropos(symbol)
+  " Find symbol using apropos when it's not already imported
+  let l:script = '(let ((results ())) (dolist (sym (apropos-list \"' . toupper(a:symbol) . '\")) (when (string= (symbol-name sym) \"' . toupper(a:symbol) . '\") (push (package-name (symbol-package sym)) results))) (nreverse results))'
+  let l:result = SlimvEvalQuiet(l:script)
+
+  if empty(l:result) || l:result == 'NIL'
+    return ''
+  endif
+
+  " Parse the result - it should be a list of package names
+  let l:result = UndoubleQuote(l:result)
+
+  " Remove outer parentheses and split by spaces, handling quoted strings
+  let l:result = substitute(l:result, '^(\|)$', '', 'g')
+  let l:packages = split(l:result, '\s\+')
+
+  " Clean up package names (remove quotes)
+  let l:clean_packages = []
+  for pkg in l:packages
+    let l:clean_pkg = substitute(pkg, '^"\|"$', '', 'g')
+    if !empty(l:clean_pkg)
+      call add(l:clean_packages, l:clean_pkg)
+    endif
+  endfor
+
+  if empty(l:clean_packages)
+    return ''
+  elseif len(l:clean_packages) == 1
+    return l:clean_packages[0]
+  else
+    " Multiple matches - let user choose
+    echo "Multiple packages found for " . a:symbol . ":"
+    for i in range(len(l:clean_packages))
+      echo (i + 1) . ": " . l:clean_packages[i]
+    endfor
+    let l:choice = input("Choose package (1-" . len(l:clean_packages) . "): ")
+    let l:idx = str2nr(l:choice) - 1
+    if l:idx >= 0 && l:idx < len(l:clean_packages)
+      return l:clean_packages[l:idx]
+    else
+      echo "Invalid choice"
+      return ''
+    endif
+  endif
+endfunction
+
+function! IsSymbolImported(symbol, pkg_name)
+  let l:script = '(multiple-value-bind (sym status) (find-symbol \"' . toupper(a:symbol) . '\" \"' . toupper(a:pkg_name) . '\") (values status (when sym (package-name (symbol-package sym)))))'
+  let l:result = SlimvEvalQuiet(l:script)
+  return l:result !~# 'NIL'
+endfunction
+
+""""
+" refactor commands:
+""""
+
+function! ExportSymbol()
+  " Adds the symbol under the cursor to the defpackage's export list.
+
+  " Store current position and buffer and view
+  let l:cur_pos = getpos('.')
+  let l:cur_buf = bufnr('%')
+  let l:cur_view = winsaveview()
+
+  " Get the symbol under cursor
+  let l:symbol = expand('<cword>')
+
+  " Get package name and source file
+  " (note name must come first as it searches current file)
+  let l:pkg_name = GetPackageName()
+  let l:pkg_file = GetPackageSrc('')
+  if empty(l:pkg_file)
+    echo "Could not find package source file"
+    return
+  endif
+
+  " Load package file into new buffer if needed
+  let l:pkg_in_other_buf = 0
+  if expand('%:p') !=# l:pkg_file
+    let l:pkg_in_other_buf = 1
+    let l:pkg_buf = bufnr(l:pkg_file)
+    if l:pkg_buf == -1
+      execute 'edit ' . fnameescape(l:pkg_file)
+    else
+      execute 'buffer ' . l:pkg_buf
+    endif
+  endif
+
+  let l:pkg_start_line = FindDefPackageLine(l:pkg_name)
+
+  if l:pkg_start_line == 0
+    " Close buffer and restore position:
+    execute 'buffer ' . l:cur_buf
+    call setpos('.', l:cur_pos)
+    call winrestview(l:cur_view)
+    echo "Could not find defpackage form"
+    return
+  endif
+
+  if !l:pkg_in_other_buf
+    " Need to account for newly added line when moving cursor back
+    let l:cur_pos[1] = l:cur_pos[1]+1
+    let l:cur_view['lnum'] = l:cur_view['lnum']+1
+    let l:cur_view['topline'] = l:cur_view['topline']+1
+  endif
+
+  " Find the end of the defpackage form, move to it
+  execute "normal \<Plug>(sexp_move_to_next_bracket)"
+
+  " Look for existing :export clause in the defpackage boundary,
+  " moving to it if found
+  let l:has_export = search('(:export\_s', 'b', l:pkg_start_line)
+
+  if l:has_export
+    execute "normal \<Plug>(sexp_move_to_next_bracket)"
+    execute "normal i\n#:" . l:symbol
+  else
+    execute "normal i\n(:export #:" . l:symbol . ")"
+  endif
+
+  " Save changes?
+  " write
+
+  " Return to original buffer and position
+  execute 'buffer ' . l:cur_buf
+  call setpos('.', l:cur_pos)
+  call winrestview(l:cur_view)
+endfunction
+
+nnoremap <silent> \ex :call ExportSymbol()<cr>
+
+
+function! InlineAndImportSymbol()
+  " Removes the package prefix from the symbol under the cursor,
+  " adds it to the import list,
+  " and replaces ALL full package-prefixed names in the current buffer
+  " with the plain symbol name.
+
+  let l:cur_pos = getpos('.')
+  let l:cur_buf = bufnr('%')
+  let l:cur_view = winsaveview()
+
+  " Get the current word with package prefix
+  let l:line = getline('.')
+  let l:col = col('.')
+
+  " Find package:symbol pattern around cursor
+  let l:start_col = l:col
+  let l:end_col = l:col
+
+  " Expand backwards to find package prefix
+  while l:start_col > 1 && l:line[l:start_col-2] =~# '[a-zA-Z0-9.\-:]'
+    let l:start_col -= 1
+  endwhile
+
+  " Expand forwards to find full symbol
+  while l:end_col < len(l:line) && l:line[l:end_col-1] =~# '[a-zA-Z0-9.\-:?!]'
+    let l:end_col += 1
+  endwhile
+
+  let l:full_symbol = l:line[l:start_col-1:l:end_col-2]
+
+  " Check if it contains a colon (package separator)
+  if l:full_symbol !~# ':'
+    echo "No package prefix found, full_symbol was " . full_symbol
+    return
+  endif
+
+  let l:parts = split(l:full_symbol, ':')
+  if len(l:parts) < 2
+    echo "Invalid package:symbol format"
+    return
+  endif
+
+  let l:pkg_name = l:parts[0]
+  let l:symbol = l:parts[-1]
+
+  " Get current package info
+  let l:cur_pkg_name = GetPackageName()
+  let l:pkg_file = GetPackageSrc('')
+
+  if empty(l:pkg_file)
+    echo "Could not find package source file. Make sure to LOAD the file if you made defpackage changes. cur_pkg_name: " . cur_pkg_name
+    return
+  endif
+
+  " Check if symbol is already imported
+  if IsSymbolImported(l:symbol, l:cur_pkg_name)
+    echo 'Symbol already imported.'
+    " Just do the inline part
+    "execute l:start_col . ',' . (l:end_col-1) . 's/' . escape(l:full_symbol, '/') . '/' . l:symbol . '/'
+    execute '%s/' . escape(l:full_symbol, '/') . '/' . l:symbol . '/g'
+    call setpos('.', l:cur_pos)
+    return
+  endif
+
+  " Open package file
+  let l:pkg_in_other_buf = 0
+  if expand('%:p') !=# l:pkg_file
+    let l:pkg_in_other_buf = 1
+    let l:pkg_buf = bufnr(l:pkg_file)
+    if l:pkg_buf == -1
+      execute 'edit ' . fnameescape(l:pkg_file)
+    else
+      execute 'buffer ' . l:pkg_buf
+    endif
+  endif
+
+  let l:pkg_start_line = FindDefPackageLine(l:cur_pkg_name)
+
+  if l:pkg_start_line == 0
+    execute 'buffer ' . l:cur_buf
+    call setpos('.', l:cur_pos)
+    call winrestview(l:cur_view)
+    echo "Could not find defpackage form"
+    return
+  endif
+
+  " Find end of defpackage
+  call cursor(l:pkg_start_line, 1)
+  execute "normal \<Plug>(sexp_move_to_next_bracket)"
+
+  " Look for existing :import-from clause for this package
+  let l:import_pattern = '(:import-from\_s\+[#]\?[:]\?' . l:pkg_name . '\_s'
+  let l:has_import = search(l:import_pattern, 'b', l:pkg_start_line)
+
+  if l:has_import
+    " Add to existing import list
+    execute "normal \<Plug>(sexp_move_to_next_bracket)"
+    execute "normal i\n#:" . l:symbol
+  else
+    " Create new import-from clause
+    execute "normal i\n(:import-from #:" . l:pkg_name . "\n#:" . l:symbol . ")"
+  endif
+
+  " Return to original buffer and inline the symbol
+  execute 'buffer ' . l:cur_buf
+  call setpos('.', l:cur_pos)
+  call winrestview(l:cur_view)
+
+  " Replace package:symbol with just symbol
+  "execute l:start_col . ',' . (l:end_col-1) . 's/' . escape(l:full_symbol, '/') . '/' . l:symbol . '/'
+  execute '%s/' . escape(l:full_symbol, '/') . '/' . l:symbol . '/g'
+  call setpos('.', l:cur_pos)
+
+  echo "Imported and inlined: " . l:symbol
+endfunction
+
+nnoremap <silent> \in :call InlineAndImportSymbol()<cr>
+
+
+function! UninlineSymbol()
+  " Add package prefix to symbol based on its actual package
+
+  let l:symbol = expand('<cword>')
+
+  if empty(l:symbol)
+    echo "No symbol under cursor"
+    return
+  endif
+
+  " Get the package this symbol belongs to
+  let l:pkg_name = GetSymbolPackage(l:symbol)
+
+  " If not found, try apropos as fallback
+  if empty(l:pkg_name) || l:pkg_name == 'nil'
+    let l:pkg_name = FindSymbolWithApropos(l:symbol)
+  endif
+
+  if empty(l:pkg_name) || l:pkg_name == 'nil' || l:pkg_name ==# 'COMMON-LISP-USER'
+    echo "Cannot determine package for symbol: " . l:symbol
+    return
+  endif
+
+  " Replace symbol with package:symbol
+  let l:qualified_symbol = tolower(l:pkg_name) . ':' . l:symbol
+  execute 's/\<' . l:symbol . '\>/' . l:qualified_symbol . '/'
+
+  echo "Uninlined: " . l:qualified_symbol
+endfunction
+
+nnoremap <silent> \uin :call UninlineSymbol()<cr>
+
+
+function! ExtractFunction(visual)
+  " Operates on a visual selection to extract it into a new top-level function.
+  if !a:visual
+    echo "Error: ExtractFunction must be called in Visual mode."
+    return
+  endif
+
+  " --- 1. Reliably get the selected text without using registers ---
+  let l:start_pos = getpos("'<")
+  let l:end_pos = getpos("'>")
+  let l:start_line = line("'<")
+  let l:end_line = line("'>")
+  let l:start_col = col("'<")
+  let l:end_col = col("'>")
+
+  let l:lines = getline(l:start_line, l:end_line)
+  if empty(l:lines)
+    echo "Error: Could not get selected text."
+    return
+  endif
+
+  if l:start_line == l:end_line
+    let l:lines[0] = strpart(l:lines[0], l:start_col - 1, l:end_col - l:start_col + 1)
+  else
+    " Multi-line selection. Handle first and last lines which may be partial.
+    let l:last_idx = len(l:lines) - 1
+    let l:lines[l:last_idx] = strpart(l:lines[l:last_idx], 0, l:end_col)
+    let l:lines[0] = strpart(l:lines[0], l:start_col - 1)
+  endif
+  let l:original_selection_text = join(l:lines, "\n")
+
+
+  " --- 2. Get user input ---
+  let l:func_spec_input = input('New function signature (e.g., my-func arg1 arg2): ')
+  if empty(l:func_spec_input)
+    echo "Extraction cancelled."
+    return
+  endif
+
+  let l:func_spec_parts = split(l:func_spec_input)
+  let l:func_name = l:func_spec_parts[0]
+  let l:params = len(l:func_spec_parts) > 1 ? l:func_spec_parts[1:] : []
+
+  let l:call_site_args = []
+  let l:new_body = l:original_selection_text
+  for l:param in l:params
+    let l:sub_expr = input('Enter call site expression for ''' . l:param . ''': ')
+    if empty(l:sub_expr)
+      echo "Extraction cancelled."
+      return
+    endif
+    call add(l:call_site_args, l:sub_expr)
+    let l:escaped_expr = escape(l:sub_expr, '.*[]^%$\~')
+    let l:new_body = substitute(l:new_body, l:escaped_expr, l:param, 'g')
+  endfor
+
+  " --- 3. Construct new forms ---
+  let l:call_form = '(' . l:func_name . (empty(l:params) ? '' : ' ' . join(l:call_site_args, ' ')) . ')'
+  let l:new_defun_str = "(defun " . l:func_name . " (" . join(l:params, ' ') . ")\n" . l:new_body . ")"
+
+  " --- 4. Perform buffer manipulations ---
+  let l:placement = input("Place function [a]bove or [b]elow current function? (default: below): ")
+  let l:place_above = (l:placement ==? 'a' || l:placement ==? 'above')
+  call setpos('.', l:start_pos)
+  " Find the start of the top-level form (assumes it starts at column 0).
+  call search('^(', 'b')
+  if l:place_above
+    execute "normal! O"
+    let l:insertion_line = line('.') - 1
+  else
+    execute "normal! %"
+    execute "normal! o"
+    let l:insertion_line = line('.')
+  endif
+
+  " Insert the new defun after the current form.
+  call append(l:insertion_line, split(l:new_defun_str, "\n"))
+
+  " Indent the newly added function.
+  let l:new_func_start_line = l:insertion_line + 1
+  let l:new_func_end_line = l:insertion_line + len(split(l:new_defun_str, "\n"))
+  execute l:new_func_start_line . ',' . l:new_func_end_line . 'normal! =='
+
+  " Finally, replace the original selection with the new function call.
+  " Re-select last visual area
+  execute "normal! gv"
+  " Change it
+  execute "normal! c" . l:call_form . "\<Esc>"
+
+  echo "Extracted function '" . l:func_name . "'"
+endfunction
+
+vnoremap <silent> \ef :<C-u>call ExtractFunction(1)<CR>
+
+
+
+
+
+" symbol -> quoted string
+" #:blah -> "blah"
+" #'func -> "func"
+" :foo -> "foo"
+" 'some-symbol -> "some-symbol"
+" unquoted:symbol -> "unquoted:symbol"
+" `quasi -> "quasi"
+" ,escaped -> "escaped"
+function! RefactorSymbolToString()
+  " Depends on vim-surround / vim-sexp-mappings-for-regular-people...
+  " should use n2char(getchar())? though surround.vim has its own s:getchar()
+  let cursor_col_idx = col('.') - 1
+  let cur_line = getline('.')
+  let cur_char = cur_line[cursor_col_idx]
+  setlocal iskeyword+=#
+  setlocal iskeyword+='
+  setlocal iskeyword+=`
+  setlocal iskeyword+=,
+  let cur_word_col_idx = strridx(cur_line, expand('<cword>'), cursor_col_idx)
+  setlocal iskeyword-=,
+  setlocal iskeyword-=`
+  setlocal iskeyword-='
+  setlocal iskeyword-=#
+  " note not using <cWORD> since I think that includes too much...
+  "let is_on_keyword = (cur_word_col_idx >=0 && (cur_word_col_idx + strlen(expand('<cword>')) >= cursor_col_idx))
+  let is_at_start_keyword = (cur_word_col_idx == cursor_col_idx)
+  if !is_at_start_keyword
+    " move to it
+    "execute 'normal! B'
+    call sexp#move_to_adjacent_element('n', v:count, 0, 0, 0)
+    " don't infinite loop..
+    if getline('.')[col('.')-1] == '"'
+      return
+    endif
+    return RefactorSymbolToString()
+  endif
+  if cur_char == '#' || cur_char == ':' || cur_char == "'" || cur_char == '`' || cur_char == ','
+    execute 'normal! x'
+    return RefactorSymbolToString()
+  endif
+  " need this instead of usual ysiw"
+  " something is broken here. first try of this, no double quotes.
+  " manually do ysiw" or this command, then I get double quotes.
+  " then \rf2s works.
+  execute 'normal! g@iw"'
+endfunction
+
+map \rf2s :call RefactorSymbolToString()<cr>W
+" tempted to have refactoring shortcuts
+" bind macro @r to the last refactor for even shorter
+" quick repetition...
+
+

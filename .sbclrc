@@ -3,7 +3,11 @@
 (let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
                                        (user-homedir-pathname))))
   (when (probe-file quicklisp-init)
-    (load quicklisp-init)))
+    (load quicklisp-init)
+    (asdf:load-system "ql-https")
+    (uiop:symbol-call :quicklisp :setup)))
+#+ql-https
+(setf ql-https:*quietly-use-https* t)
 
 (defun update-ql ()
   (ql:update-client)
@@ -13,6 +17,13 @@
   ; make sure to update-ql and restart sbcl first
   ; add any quickloads here that we might want as part of core not captured by .sbclrc
   ; numcl, vgplot
+  (ql:quickload :dexador)
+  (ql:quickload :plump)
+  (ql:quickload :lquery)
+  (ql:quickload :com.inuoe.jzon)
+  (ql:quickload :cl-ppcre)
+  (ql:quickload :cl-webdriver-client)
+
   (uiop:dump-image "sbcl-core"))
 
 
@@ -90,6 +101,8 @@
 ;(progn
 ;  (sb-ext:restrict-compiler-policy 'safety 3)
 ;  (sb-ext:restrict-compiler-policy 'debug 3))
+; note that under safety of 3, we get certain runtime type checks inserted for us
+; note that under speed of 3, we get compilation warnings about insufficient type info for e.g. slow generic adds.
 
 (unless (find-package :cmu-infix)
   #+quicklisp (ql:quickload 'cmu-infix))
@@ -101,6 +114,8 @@
 ; sb-c::*policy*
 ; (sb-cltl2:declaration-information 'optimize)
 
+; (with-standard-io-syntax (print hash-table))
+; #.(sb-impl::%stuff-hash-table (make-hash-table) (quote ((foo . 1))))
 
 (set-dispatch-macro-character #\# #\! (lambda (stream subchar arg)
                                         (declare (ignore subchar arg))
@@ -108,7 +123,8 @@
                                         (values)))
 
 
-#|#+quicklisp (ql:quickload :clouseau)
+#|
+;#+quicklisp (ql:quickload :clouseau)
 (defvar *clouseau-inspector* nil)
 (defun clouseau-inspect (symbol)
   (unless (and (clim:application-frame-p *clouseau-inspector*)
@@ -148,6 +164,7 @@
 
 ;(setf *print-case* :downcase) ; let's try it out...
 ; messes up some libraries..
+(setf *print-right-margin* 1000) ; allow wrapping to not truncate things like describe
 
 (defun search-in-docstring (text &key (test (function search)))
   (let ((funs '()))
@@ -161,3 +178,29 @@
 
 (defun asdf-here ()
   (push (uiop:getcwd) asdf:*central-registry*))
+
+(unless (find-package :closer-mop)
+  #+quicklisp (ql:quickload 'closer-mop))
+(defun show-applicable-methods (method class-symbol)
+  (closer-mop:compute-applicable-methods-using-classes method (list (find-class class-symbol))))
+(defun show-effective-method (method class-symbol)
+  (closer-mop:compute-effective-method method
+                                       (closer-mop:find-method-combination method 'standard nil)
+                                       (show-applicable-methods method class-symbol)))
+
+(defun log-gc ()
+  (setf (sb-ext:gc-logfile) "/tmp/gc"))
+(defun unlog-gc ()
+  (setf (sb-ext:gc-logfile) nil))
+; don't forget: sb-impl::without-gcing
+
+#+nil
+(defun profile ()
+  (require :sb-sprof)
+  (sb-sprof:reset)
+  (sb-sprof:start-profiling
+    :mode :alloc
+    :threads (list sb-thread:*current-thread*))
+  ; wait
+  (sb-sprof:stop-profiling)
+  (sb-sprof:report :max 40))

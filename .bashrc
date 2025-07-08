@@ -182,7 +182,7 @@ export PATH=$PATH:$HOME/git_repos/not_mine/srt-resync
 
 #export FZF_DEFAULT_COMMAND="ag . -l --ignore '*.fasl' --ignore '*.pyc' --nocolor --hidden"
 export FZF_DEFAULT_COMMAND="ag -l"
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+[ -f /home/kevin/.fzf.bash ] && source /home/kevin/.fzf.bash
 
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/home/kevin/google-cloud-sdk/path.bash.inc' ]; then . '/home/kevin/google-cloud-sdk/path.bash.inc'; fi
@@ -258,7 +258,11 @@ curltime() {
 }
 
 livetl() {
-  whisper-ctranslate2 --language Japanese --task translate --live_transcribe True --model large-v2 --live_volume_threshold 0.03
+  whisper-ctranslate2 --language Japanese --task translate --live_transcribe True --model large-v3 --live_volume_threshold 0.01
+}
+
+livetl-en() {
+  whisper-ctranslate2 --language English --live_transcribe True --model large-v3 --live_volume_threshold 0.01
 }
 
 whisper-stdout() {
@@ -269,14 +273,64 @@ whisper-stdout() {
     lang=$2
     task='transcribe'
   fi
-  whisper-ctranslate2 --language "$lang" --task $task --model large-v2 --condition_on_previous_text False -f txt "$1"
+  whisper-ctranslate2 --language "$lang" --task $task --model large-v3 --condition_on_previous_text False -f txt "$1"
   bn="${1%.*}"
   rm "$bn".txt
 }
 
 whisper-jp() {
-  whisper-ctranslate2 --language Japanese --task translate --model large-v2 -f srt --condition_on_previous_text False "$1"
+  #whisper-ctranslate2 --language Japanese --task translate --model large-v3 -f srt --vad_filter True --condition_on_previous_text False "$1"
+  # vad filter was causing 0 output on a song...
+  whisper-ctranslate2 --language Japanese --task translate --model large-v3 -f srt --condition_on_previous_text False "$1"
 }
+
+whisper-jp-transcribe() {
+  #whisper-ctranslate2 --language Japanese --task translate --model large-v3 -f srt --vad_filter True --condition_on_previous_text False "$1"
+  # vad filter was causing 0 output on a song...
+  whisper-ctranslate2 --language Japanese --model large-v3 -f srt --condition_on_previous_text False "$1"
+}
+
+whisper-en() {
+  whisper-ctranslate2 --language English --model large-v3 -f srt --condition_on_previous_text False "$1"
+}
+
+list-aspect-ratios() {
+  for e in *.JPG; do echo -n "$e "; identify -ping -format 'scale=2; %w/%h\n' $e | bc; done
+}
+
+list-proton() {
+  dirs="$HOME/.local/share/Steam/steamapps/compatdata/"
+  list() {
+    for i in $dirs*; do
+      appid=$(basename "$i")
+      vers=$([ -f "$i/version" ] && cat "$i/version" || echo "N/A")
+      printf "%s\t%s\n" "$appid" "$vers"
+    done
+  }
+
+  id_versions=$(list | sort -k1,1)
+  name_ids=$(grep -n "name" "$HOME/.local/share/Steam/steamapps/"*.acf |
+                  sed -e 's/^.*_//;s/\.acf:.:/ /;s/name//;s/"//g;s/\t//g;s/ /-/' |
+                  awk -F"-" '{printf "%s\t%s\n", $1, $2}' |
+                  sort -k1,1)
+
+  join -t $'\t' -o '2.2,1.1,1.2' <(echo "$id_versions") <(echo "$name_ids") |
+    awk -F'\t' '{printf "%-55s\t%s\t%s\n", $1, $2, $3}' | sort -k1,1
+}
+
+alias vi=nvim
+
+ups-load() {
+  # multiply by 10 for approx. wattage
+  load=$(upsc myups@localhost ups.load)
+  echo $(( $load * 10 ))W
+}
+
+tekken-rng() {
+  curl -s 'https://www.random.org/integers/?num=1&min=1&max=35&col=1&base=10&format=html&rnd=new' | grep 'class="data"' | awk -F '>' '{print $2}'
+}
+
+export PATH=$HOME/git_repos/not_mine/gamescope/build/src/:$PATH
 
 fortune -a
 

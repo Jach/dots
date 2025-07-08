@@ -26,6 +26,7 @@
                         `(:snippet ,(format nil "(defsystem :~A" dependency)
                           :align t)))))
 
+#+sbcl
 (defmethod xref-doit ((type (eql :specializes-generally)) thing)
   (swank/sbcl::sanitize-xrefs
     (mapcar #'swank/sbcl::source-location-for-xref-data

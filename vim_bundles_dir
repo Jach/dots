@@ -1,4 +1,8 @@
+These are plugins I use with vim / neovim. (ls .vim/bundle/ | less).
+
 ale
+claude.vim
+nerdcommenter
 slimv
 vim-abolish
 vim-bbye
@@ -15,7 +19,10 @@ vim-surround
 vim-table-mode
 vim-windowswap
 
-# not on new machine:
+I might not make use of all of them all the time, but I at least find value in most of them.
+
+I've tried on other machines or in the past but don't currently use:
+
 # nimrod.vim
 # vim-javascript
 

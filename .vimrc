@@ -1,10 +1,8 @@
 set sessionoptions-=options " don't let sessions capture all global options including 'runtimepath'
 
-nnoremap <F2> :set invpaste paste?<CR>
-imap <F2> <C-O><F2>
-set pastetoggle=<F2>
-set hidden " keep buffers open without necessarily displaying them, or switching them without having to save them
-" note to self, <leader> is typically \...
+" no system beep:
+set vb t_vb=
+set hidden " when set on, keep buffers open without necessarily displaying them, or switching them without having to save them
 
 " looking for a more intuitive way to handle closing buffers when the
 " slime repl is one of them...
@@ -23,7 +21,8 @@ set wildignore+=*.swp,*.fasl,*.o " don't show these in tab completed list
 set showcmd " ensures chording/command preview is shown as you type
 set scrolloff=2 " scrolling starts two lines from bottom instead of bottom
 "set tw=80 " textwidth 80 chars, auto-insert line breaks
-"set colorcolumn=80 " visible color column at character offset to remind about long lines
+"set colorcolumn=160 " visible color column at character offset to remind about long lines
+autocmd ColorScheme * highlight VertSplit cterm=NONE ctermfg=None ctermbg=58
 set linebreak " for display only; instead of line-wrapping at the last character of the line, breaks the line at a space or other custom char
 "set formatoptions+=t
 "set runtimepath+=/home/kevin/.vim/marc-plugins/vim-addon-manager
@@ -33,6 +32,7 @@ set linebreak " for display only; instead of line-wrapping at the last character
 "call scriptmanager#Activate(['vim-addon-manager','JSON',"vim-addon-fcsh"])
 filetype plugin indent on
 "syntax on " ubuntu specific
+
 set nohls " no search highlights after searching
 set expandtab " spaces instead of tabs like a civilized person
 set tabstop=2
@@ -43,29 +43,33 @@ map \tabs2 :set tabstop=2<CR>:set shiftwidth=2<CR>:set softtabstop=2
 map \tabs4 :set tabstop=4<CR>:set shiftwidth=4<CR>:set softtabstop=4
 imap jk <Esc>
 
+"set number relativenumber " relative line numbers, but with current line being the real line
+
 map \b i\textbf{<ESC>ea}<ESC>
 "map \p i(<ESC>ea)<ESC>
 map \t i&lt;<ESC>ea&gt;<ESC>
-map \tt :tabnew<cr>
 map \tm :tabmove
 "map \tn :tabnext<cr>
 "map \tp :tabprevious<cr>
 "I can't unmap these from my fingers! Trying to use buffers...
 map \bn :bnext<cr>
 map \bp :bprev<cr>
+map \bb :b#<cr>
 map \tn :bnext<cr>
 map \tp :bprev<cr>
+
+map \q :Bwipeout<cr>
+map \q! :Bwipeout!<cr>
+" I probably want to start getting in the habit of using :bw / wipeout instead
+" of delete, because otherwise the file can remain open in the jumplist and
+" lead to some confusing behavior.
+
 "map \gc :w<cr>:!git commit -a -m "kevin@`date`"
 map \gc :w<cr>:!git commit -a -m "
 map \sp :setlocal spell spelllang=en_us<cr>
 imap \itemz \begin{itemize} \end{itemize}<Esc>Bba
-" zg - add word to dict
-" z= - bring up list of suggestions
-" zug - undo add to word
-" zw - mark as wrong
-" zuw - undo wrong
-" @@ or @: - repeat last colon command
-imap zz <C-X><C-O>
+"imap zz <C-X><C-O>
+"useless shortcut that has only ever gotten in my way...
 map \tabs5 :set tabstop=5<CR>:set shiftwidth=5<CR>:set softtabstop=5
 set grepprg=grep\ -nH\ $*
 let g:tex_flavor='latex'
@@ -85,14 +89,19 @@ au BufNewFile,BufRead *.mxml set filetype=mxml
 au BufNewFile,BufRead *.as set filetype=actionscript
 au BufNewFile,BufRead *.tpl set filetype=php
 au BufNewFile,BufRead *.js set filetype=javascript
-au BufNewFile,BufRead *.tex set tw=80
-au BufNewFile,BufRead *.md set tw=80 " enforce text width
+au BufNewFile,BufRead *.tex set tw=160
+au BufNewFile,BufRead *.md set tw=160 " enforce text width
+au BufNewFile,BufRead *.txt set tw=160
 au BufNewFile,BufRead *.cljs set filetype=clojure
 au BufNewFile,BufRead *.asd set filetype=lisp
 au BufNewFile,BufRead *.ros set filetype=lisp
 au BufnewFile,BufRead *.ten set filetype=html
 au BufEnter *.lisp :syntax sync fromstart " a bit extreme, but guarantees we won't lose syntax highlighting...
 " may need to adjust redrawtime to a bigger value if we find a big slow file
+if has('gui_running')
+  let g:slimv_balloon=1
+  au BufnewFile,BufRead *.lisp set balloonexpr=SlimvDescribe(v:beval_text)
+endif
 
 map \cbase i#include <stdio.h><ESC>2o<ESC>iint main(void) {<ESC>2o<ESC>i  return 0;<ESC>o<ESC>i}<ESC>
 map \jbase ipublic class FileName {<ESC>2o<ESC>i  public static void main(String args[]) {<ESC>3o<ESC>i  }<ESC>o<ESC>i}<ESC>
@@ -145,8 +154,30 @@ let vimclojure#HighlightBuiltins = 1
 let vimclojure#ParenRainbow = 1
 let vimclojure#FuzzyIndent = 1
 
-set maxmem=104857600
-set maxmemtot=104857600
+if !has('nvim')
+  set maxmem=104857600
+  set maxmemtot=104857600
+  cs add $CSCOPE_DB
+  nnoremap <F2> :set invpaste paste?<CR>
+  imap <F2> <C-O><F2>
+  set pastetoggle=<F2>
+
+else
+  " neovim specific options
+  colorscheme vim " f you neovim 0.10
+  set notermguicolors
+  set guicursor=n-v-c-i:block
+  " orig: guicursor=n-v-c-sm:block,i-ci-ve:ver25,r-cr-o:hor20
+  set title
+  set mouse=r " allow highlighting with mouse and middle-click pasting
+endif
+
+" diff color scheme:
+hi DiffAdd      ctermfg=NONE          ctermbg=Green
+hi DiffChange   ctermfg=NONE          ctermbg=NONE
+hi DiffDelete   ctermfg=LightBlue     ctermbg=Red
+hi DiffText     ctermfg=Yellow        ctermbg=Red
+
 set maxmempattern=300000
 
 " line:
@@ -228,47 +259,36 @@ set dir=~/.vim/swpfiles
 " uncomment above to make vim swapfiles files stop showing up in project folders
 map \what :echo expand('%:p')<cr>
 
-" slimv
+" allow clicking into what windows we want and click-dragging borders for sizes
+set mouse=a
+
+let g:buftabline_indicators = 1
+
+" for lisp, see also .vim/after/syntax/lisp.vim to fix up
+" some stuff from default vim syntax.
+" Useful commands to figure out syntax issues:
+" :echo synIDattr(synID(line('.'), col('.'), 1), 'name')
+" figure out what rule is being applied.
+" :syntax list
+" :syntax list <specificThing>
+" shows all loaded syntax rules or just the rules for one thing.
+" :put =execute('syntax list')
+" puts the results of command in buffer for copy/pasting..
+"
+" Anyway,
+" slimv:
+"let g:slimv_indent_disable=1
+"let g:slimv_completions='fuzzy'
+" helps with fuzzy defs, e.g. mvb<tab> to multiple-value-bind. if commented out, will use swank completions, which is more accurate in context and handles package-local nicknames but less helpful when you only know part of the identifier symbol
+" self-suggestion: locally set this to swank when dealing with package local
+" nicknames, otherwise keep it fuzzy.
+map \fuzz :let g:slimv_completions='fuzzy'<cr>
+map \nofuzz :let g:slimv_completions='swank'<cr>
+
 let g:paredit_mode=0
 let g:lisp_rainbow=1
-" doc in slimv.txt but most useful: (adding vlime equivalents to right...
-" though vlime doesn't fit me)
-" ,s describes symbol ::: \do, \da
-" ,h looks up symbol in hyperspec
-" ,d evaluates form ::: \st
-" ,D compiles DeFun
-" ,L compile and load current file
-" ,F compiles file
-" ,b eval buffer
-" ,u undefine function
-" ,e evals current exp :::  \ss or \se, \ss handles atoms
-" ,r evals 'region' or selection :::  \s after selecting
-" ,g set-package
-" ctrl+x + 0 => close form
-" ,1 macroexpand-1 ::: \m1
-" ,m macroexpand all ::: \mm
-" ,B set breakpoint
-" ,l disassemble
-" ,fe funcall no-arg symbol name under cursor
-" ,a abort
-" ,v eval-in-debug-frame. e.g. (swank-backend:restart-frame idx)
-"      (swank-backend:activate-stepping frame) (swank-backend:sldb-step-into) (swank-backend:sldb-step-next) (swank-backend:sldb-step-out)
-"      ,a abort, ,q quit, ,n continue, ,N restart frame,
-"      ,si step-into, ,sn step-next, ,so step-out
-" ,i inspect frame
-" ,n continue
-" ,- clear repl
-" ,y interrupt repl
-"    ,xc          Who Calls
-"    ,xr          Who References
-"    ,xs          Who Sets
-"    ,xb          Who Binds
-"    ,xm          Who Macroexpands
-"    ,xp          Who Specializes
-"    ,xl          List Callers
-"    ,xe          List Callees
 let g:slimv_repl_split=2
-let g:slimv_repl_split_size=20
+let g:slimv_repl_split_size=15
 let g:scheme_builtin_swank=1
 let g:slimv_timeout=10
 let g:slimv_fasl_directory = '/tmp/'
@@ -277,7 +297,7 @@ let g:slimv_swank_cmd='!xterm -iconic -e sbcl --dynamic-space-size 10GB --core ~
 " also consider in vim :set verbosefile=test.log && :set verbose=20
 
 let g:vlime_window_settings = {
-  \ "repl": { -> {"size": 20}},
+  \ "repl": { -> {"size": 15}},
   \ "arglist": { -> {"pos": "belowright"}},
   \ "preview": { -> {"pos": "belowright"}}
   \ }
@@ -329,11 +349,6 @@ map ,xx :call SlimvXrefEditUses()<cr>
 
 map ,xg :call SlimvXrefBase('Who Specializes Generally: ', ':specializes-generally')<cr>
 
-" load/reload system, assuming current package is also system name and ql
-" knows about it...
-map ,Ls :call SlimvFindPackage()<cr>:call SlimvEval(['(ql:quickload (string-downcase (package-name *package*)))'])<cr>
-" better to just ,v and ql yourself
-
 " Inspect, but using clouseau
 function! SlimvClouseauInspect()
     if !SlimvConnectSwank()
@@ -352,81 +367,16 @@ endfunction
 map ,ci :call SlimvClouseauInspect()<cr>
 map ,fc  :call SlimvFindPackage()<cr>:call SlimvEval(['(' . SlimvSelectSymbolExt() . ')'])<cr>
 
-" Refactoring tricks...
-
-" symbol -> quoted string
-" #:blah -> "blah"
-" #'func -> "func"
-" :foo -> "foo"
-" 'some-symbol -> "some-symbol"
-" unquoted:symbol -> "unquoted:symbol"
-" `quasi -> "quasi"
-" ,escaped -> "escaped"
-function! RefactorSymbolToString()
-  " Depends on vim-surround / vim-sexp-mappings-for-regular-people...
-  " should use n2char(getchar())? though surround.vim has its own s:getchar()
-  let cursor_col_idx = col('.') - 1
-  let cur_line = getline('.')
-  let cur_char = cur_line[cursor_col_idx]
-  setlocal iskeyword+=#
-  setlocal iskeyword+='
-  setlocal iskeyword+=`
-  setlocal iskeyword+=,
-  let cur_word_col_idx = strridx(cur_line, expand('<cword>'), cursor_col_idx)
-  setlocal iskeyword-=,
-  setlocal iskeyword-=`
-  setlocal iskeyword-='
-  setlocal iskeyword-=#
-  " note not using <cWORD> since I think that includes too much...
-  "let is_on_keyword = (cur_word_col_idx >=0 && (cur_word_col_idx + strlen(expand('<cword>')) >= cursor_col_idx))
-  let is_at_start_keyword = (cur_word_col_idx == cursor_col_idx)
-  if !is_at_start_keyword
-    " move to it
-    "execute 'normal! B'
-    call sexp#move_to_adjacent_element('n', v:count, 0, 0, 0)
-    " don't infinite loop..
-    if getline('.')[col('.')-1] == '"'
-      return
-    endif
-    return RefactorSymbolToString()
-  endif
-  if cur_char == '#' || cur_char == ':' || cur_char == "'" || cur_char == '`' || cur_char == ','
-    execute 'normal! x'
-    return RefactorSymbolToString()
-  endif
-  " need this instead of usual ysiw"
-  execute 'normal! g@iw"'
-endfunction
-
-map \rf2s :call RefactorSymbolToString()<cr>W
-" tempted to have refactoring shortcuts
-" bind macro @r to the last refactor for even shorter
-" quick repetition...
-
 let g:grepper = {}
 let g:grepper.tools = ['ag']
 let g:grepper.dir = 'repo,cwd'
 command! Todo :Grepper -noprompt -query '(todo|fixme)'
 
-" general mass-rename:
-" :Grepper -noprompt -query symbol
-" (can use cword, or just :Grepper<cr> and type it in
-" populates both quickfix list and location list.
-" :cdo %s/symbol/replacement/gce
-" -> run search-replace over all quickfix spots. the e suppresses errors.
-"  (also can use (Subvert)
-" :cdo update
-" -> saves buffers
-"  (can just add this to the end of the other cdo command as | update)
-" :cdfo :bd
-" -> close the buffers
-"
-" also generally useful, :cclose to close the quickfix window e.g. after
-" jumping to a file
-" and <c-w><c-p> to jump back to quickfix window if not wanting to close
-"
-
+" ALE plugin options
 let g:ale_warn_about_trailing_whitespace=0
+let g:ale_pattern_options = {'.c$\|.h$\|.cpp$\|.cxx$': {'ale_enabled': 0}}
+
+
 function! StripTrailingWhitespace()
   "random note, should use normal! instead, which avoids
   "custom mappings
@@ -438,6 +388,12 @@ function! StripTrailingWhitespace()
   normal `Z
 endfunction
 autocmd BufWritePre * :call StripTrailingWhitespace()
+
+" project-specific vimrc
+" e.g. create a .vimrc in the project root and bind custom g:whatever settings
+" in it for just that project.
+set exrc " local rc files
+set secure " but not allowing them to use autocmd, shell, and write commands
 
 "set autochdir
 
@@ -457,7 +413,6 @@ let g:rooter_silent_chdir = 1
 " right-align from 80th col
 nnoremap \<tab> mc80A <esc>080lDgelD`cP
 
-cs add $CSCOPE_DB
 
 ":verbose set bg?
 "echo g:colors_name
@@ -471,6 +426,148 @@ let g:NERDCommentEmptyLines = 1
 
 set clipboard=unnamedplus "automatically make yank/delete use system clipboard
 
+
+function! CreateQuicklispSymlink()
+  " Get the full path of the current file
+  let l:filepath = expand('%:p')
+  if l:filepath == ''
+    echoerr "No file loaded in the buffer."
+    return
+  endif
+
+  " Get the directory of the file
+  let l:filedir = fnamemodify(l:filepath, ':h')
+  let l:dirname = fnamemodify(l:filedir, ':t')
+
+  " Define the target symlink path
+  let l:link_path = expand('~/quicklisp/local-projects/' . l:dirname)
+
+  " If the symlink already exists, notify the user
+  if filereadable(l:link_path) || isdirectory(l:link_path)
+    echoerr "Link or directory already exists at: " . l:link_path
+    return
+  endif
+
+  " Construct and run the shell command to create the symlink
+  let l:cmd = 'ln -s ' . shellescape(l:filedir) . ' ' . shellescape(l:link_path)
+  call system(l:cmd)
+
+  " Report success or failure
+  if v:shell_error
+    echoerr "Failed to create symlink."
+  else
+    echom "Symlink created: " . l:link_path . " -> " . l:filedir
+  endif
+endfunction
+
+" Optional: Bind it to a command
+command! QuicklispLink call CreateQuicklispSymlink()
+
+
+source /home/kevin/.vimrc-lisp-refactoring
+
+source /home/kevin/.vimrc-claude
+
 execute pathogen#infect()
 Helptags
 
+" Random vim notes to self to save a google
+"
+" <leader> is typically \...
+"
+" spellcheck:
+" zg - add word to dict
+" z= - bring up list of suggestions
+" zug - undo add to word
+" zw - mark as wrong
+" zuw - undo wrong
+" @@ or @: - repeat last colon command
+"
+" can echo value of a setting with :set thing?
+" can get it into clipboard with
+" :redir @+ | set thing? | redir END
+"
+" Run :syntax sync fromstart
+" if mysteriously lose syntax highlighting
+"
+" Navigation notes
+"
+" Use :b# to toggle between two buffers
+" When using cross ref, jump to file name printed in repl with gF (gf to not use
+" line number)
+" ctrl+o will jump back to previous buf.
+" ctrl+t to jump back after a ] jump., ctrl+o/ctrl+i to toggle back/forth...
+" note that ctrl+] for def (works for make-instance args)
+"
+" Lisp development notes
+"
+" the doc for commands is all in slimv.txt but these are most useful to me. (adding some
+" vlime equivalents as well, though I sorta gave up on vlime.)
+" Majority of my commands are ,e and ,d and ,v-then-up-arrow-history to
+" reload a system.
+" Commands I use very rarely (and sometimes forget exist) are thus listed first,
+" then some commands that I usually remember and use frequently but not as much
+" as top 3 listed next (in roughly inverse frequency order), lastly the top 3.
+"
+"
+" ,B set breakpoint
+" ,l disassemble
+" ,b eval buffer
+" ,u undefine function
+" ,fc my custom find package
+" ,xd who sys depends on
+" ,xx who edits/uses symbol
+" ,xg who specializes generally
+" \rf2s refator symbol to string
+"
+" ,- clear repl
+" cross referencing
+"    ,xc          Who Calls
+"    ,xr          Who References
+"    ,xs          Who Sets
+"    ,xb          Who Binds
+"    ,xm          Who Macroexpands
+"    ,xp          Who Specializes
+"    ,xl          List Callers
+"    ,xe          List Callees
+" ,L compile and load current file
+" ,F compiles file
+" ctrl+x + 0 => close form
+"
+" debug window
+"      (swank-backend:activate-stepping frame) (swank-backend:sldb-step-into) (swank-backend:sldb-step-next) (swank-backend:sldb-step-out)
+" ,a abort, ,q quit, ,n continue, ,N restart frame,
+"      ,si step-into, ,sn step-next, ,so step-out
+"
+" ,i inspect frame
+" ,y interrupt repl
+" ,1 macroexpand-1 ::: \m1
+" ,m macroexpand all ::: \mm
+" ,s describes symbol ::: \do, \da
+" ,h looks up symbol in hyperspec
+" ,r evals 'region' or selection :::  \s after selecting
+" ,fe funcall no-arg symbol name under cursor
+"
+" ,d evaluates form ::: \st
+" ,e evals current exp :::  \ss or \se, \ss handles atoms
+" ,v eval-in-debug-frame. e.g. (swank-backend:restart-frame idx)
+"
+" Refactoring notes
+"
+" general mass-rename:
+" :Grepper -noprompt -query symbol
+" (can use cword, or just :Grepper<cr> and type it in
+" populates both quickfix list and location list.
+" :cdo %s/symbol/replacement/gce
+" -> run search-replace over all quickfix spots. the e suppresses errors.
+"  (also can use (Subvert)
+" :cdo update
+" -> saves buffers
+"  (can just add this to the end of the other cdo command as | update)
+" :cdfo :bd
+" -> close the buffers
+"
+" also generally useful, :cclose to close the quickfix window e.g. after
+" jumping to a file
+" and <c-w><c-p> to jump back to quickfix window if not wanting to close
+"
