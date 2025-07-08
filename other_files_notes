@@ -1,0 +1,59 @@
+This is to collect random notes and other file contents that it doesn't necessarily make sense to symlink here. (I was on the fence with vim_after_syntax_lisp.)
+
+# Neovim
+
+I use a mix of vim and neovim, and try to keep my configs the same between them...
+
+In ~/.config/nvim/ I made init.vim with the following content:
+
+set runtimepath^=~/.vim runtimepath+=~/.vim/after
+let &packpath=&runtimepath
+source ~/.vimrc
+
+This keeps neovim using my same vim settings properly while still being able to use neovim stuff like Lua.
+
+In ~/.config/nvim/plugin/ I made init.lua with the following content:
+
+local o = vim.opt
+-- shortcut to set things like o.number = true instead of set number.
+
+-- nvim-lspconfig for gdscript
+require("lspconfig")["gdscript"].setup({
+  name = "godot",
+  cmd = vim.lsp.rpc.connect("127.0.0.1", 6005),
+})
+
+-- nvim-dap for debugging:
+local dap = require("dap")
+dap.adapters.godot = {
+  type = "server",
+  host = "127.0.0.1",
+  port = 6006,
+}
+dap.configurations.gdscript = {
+  {
+    type = "godot",
+    request = "launch",
+    name = "Launch scene",
+    project = "${workspaceFolder}",
+    launch_scene = true,
+  },
+}
+
+
+This is mainly for godot support. I can launch
+
+nvim --listen /tmp/godot.pipe
+
+And godot will open files into my vim session instead of its kind of crappy internal editor.
+
+## LSP Server
+
+Also for Neovim, I setup an LSP server I think also for godot support.
+I used: https://github.com/neovim/nvim-lspconfig
+
+It was cloned into ~/.config/nvim/pack/nvim/start/
+
+I also used: https://github.com/mfussenegger/nvim-dap
+
+It was cloned into ~/.config/nvim/pack/plugins/start/
