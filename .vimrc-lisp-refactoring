@@ -364,7 +364,7 @@ function! UninlineSymbol()
   let l:qualified_symbol = tolower(l:pkg_name) . ':' . l:symbol
   execute 's/\<' . l:symbol . '\>/' . l:qualified_symbol . '/'
 
-  echo "Uninlined: " . l:qualified_symbol
+  echo "\nUninlined: " . l:qualified_symbol
 endfunction
 
 nnoremap <silent> \uin :call UninlineSymbol()<cr>
@@ -508,11 +508,23 @@ function! RefactorSymbolToString()
     execute 'normal! x'
     return RefactorSymbolToString()
   endif
-  " need this instead of usual ysiw"
-  " something is broken here. first try of this, no double quotes.
-  " manually do ysiw" or this command, then I get double quotes.
-  " then \rf2s works.
-  execute 'normal! g@iw"'
+  " At this point, any prefixes should have been stripped so it's just a naked
+  " symbol we can slap double quotes around.
+  "
+  " I would like to use ysiw" here, since I'm not sure if <cword> captures all
+  " of what counts as a lisp symbol as a 'word', but for some reason it's
+  " busted in a weird way. That is, if you replace the next two lines with
+  " either:
+  " execute 'normal! g@iw"'
+  " or
+  " execute 'normal! ysiw"'
+  " then you'll be left with just the symbol but no surrounding quotes.
+  " However, if you manually type ysiw"
+  " in your editor, then try this command again on other symbols, it will work
+  " and give you the quoted symbol... Well, we'll revisit this when cword
+  " isn't good-enough.
+  let word = expand('<cword>')
+  execute 'normal! ciw"' . word . '"'
 endfunction
 
 map \rf2s :call RefactorSymbolToString()<cr>W
