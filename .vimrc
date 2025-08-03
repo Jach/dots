@@ -1,17 +1,7 @@
 set sessionoptions-=options " don't let sessions capture all global options including 'runtimepath'
 
-" no system beep:
-set vb t_vb=
+set visualbell t_vb= "no system beep
 set hidden " when set on, keep buffers open without necessarily displaying them, or switching them without having to save them
-
-" looking for a more intuitive way to handle closing buffers when the
-" slime repl is one of them...
-" Though :q is convenient, just going to train myself to :bd instead. or :Bd
-" now with vim-bbye.
-"cnoreabbrev wq w<bar>bd
-"cnoreabbrev q bfirst<bar>bd#
-
-" note: now you must use :quit to quit...
 
 set incsearch " incremental highlighting
 set ignorecase " case-insensitive search...
@@ -22,28 +12,26 @@ set showcmd " ensures chording/command preview is shown as you type
 set scrolloff=2 " scrolling starts two lines from bottom instead of bottom
 "set tw=80 " textwidth 80 chars, auto-insert line breaks
 "set colorcolumn=160 " visible color column at character offset to remind about long lines
-autocmd ColorScheme * highlight VertSplit cterm=NONE ctermfg=None ctermbg=58
+autocmd ColorScheme * highlight VertSplit cterm=NONE ctermfg=None ctermbg=58 " better split color
 set linebreak " for display only; instead of line-wrapping at the last character of the line, breaks the line at a space or other custom char
-"set formatoptions+=t
-"set runtimepath+=/home/kevin/.vim/marc-plugins/vim-addon-manager
-" activate the addons called 'vim-addon-manager', 'JSON', 'name1', 'name2'
-" This adds them to runtimepath and ensures that plugin/* and after/plugin/*
-" files are sourced
-"call scriptmanager#Activate(['vim-addon-manager','JSON',"vim-addon-fcsh"])
 filetype plugin indent on
-"syntax on " ubuntu specific
+"syntax on " ubuntu specific maybe, didn't turn it on by default
 
 set nohls " no search highlights after searching
 set expandtab " spaces instead of tabs like a civilized person
+" default 'tab' width of n spaces:
 set tabstop=2
 set shiftwidth=2
 set softtabstop=2
-" the only valid spacings are 2 and 4!
+" the only valid spacings are 2 and 4! easily swap:
 map \tabs2 :set tabstop=2<CR>:set shiftwidth=2<CR>:set softtabstop=2
 map \tabs4 :set tabstop=4<CR>:set shiftwidth=4<CR>:set softtabstop=4
+" apparently 5 sometimes?
+" map \tabs5 :set tabstop=5<CR>:set shiftwidth=5<CR>:set softtabstop=5
+
+" no need to reach all the way to escape key:
 imap jk <Esc>
 
-"set number relativenumber " relative line numbers, but with current line being the real line
 
 map \b i\textbf{<ESC>ea}<ESC>
 "map \p i(<ESC>ea)<ESC>
@@ -52,11 +40,13 @@ map \tm :tabmove
 "map \tn :tabnext<cr>
 "map \tp :tabprevious<cr>
 "I can't unmap these from my fingers! Trying to use buffers...
+map \tn :bnext<cr>
+map \tp :bprev<cr>
+
 map \bn :bnext<cr>
 map \bp :bprev<cr>
 map \bb :b#<cr>
-map \tn :bnext<cr>
-map \tp :bprev<cr>
+" actually have mostly gotten used to :b <buffername> or ctrl+p
 
 map \q :Bwipeout<cr>
 map \q! :Bwipeout!<cr>
@@ -64,17 +54,21 @@ map \q! :Bwipeout!<cr>
 " of delete, because otherwise the file can remain open in the jumplist and
 " lead to some confusing behavior.
 
-"map \gc :w<cr>:!git commit -a -m "kevin@`date`"
-map \gc :w<cr>:!git commit -a -m "
+" enable spellcheck
 map \sp :setlocal spell spelllang=en_us<cr>
+
+
 imap \itemz \begin{itemize} \end{itemize}<Esc>Bba
-"imap zz <C-X><C-O>
-"useless shortcut that has only ever gotten in my way...
-map \tabs5 :set tabstop=5<CR>:set shiftwidth=5<CR>:set softtabstop=5
+
+
+
 set grepprg=grep\ -nH\ $*
+
 let g:tex_flavor='latex'
-"set nu
-"au BufAdd,BufNewFile * nested tab sball
+
+"set nu " line numbers
+"set number relativenumber " relative line numbers, but with current line being the real line
+
 "map \gt :tab split<CR>:exec("tag ".expand("<cword>"))<CR>
 "map \tags :!ctags -R --c++-kinds=+pl --fields=+iaS --extra=+q . <CR>
 "ctags -R --language-force=lisp ~/quicklisp/dists/quicklisp/software
@@ -125,7 +119,7 @@ let OmniCpp_DefaultNamespaces = ["std", "_GLIBCXX_STD"]
 "set ofu=syntaxcomplete#Complete
 
 " Pydiction
-let g:pydiction_location = '/home/kevin/.vim/pydiction-1.2/complete-dict'
+let g:pydiction_location = $HOME . '/.vim/pydiction-1.2/complete-dict'
 " let g:pydiction_menu_height = 20 (default 15)
 
 " Clever tab completion
@@ -142,7 +136,7 @@ fun! OmniComplete()
 
 au BufWinLeave *? silent! mkview "no silent
 au BufWinEnter *? silent! loadview "no !
-command! Rmview execute "!rm -i ~/.vim/view/~=+" . substitute(substitute(expand('%:p'), "/home/kevin/", "", ""), "/", "=+", "g") . "="
+command! Rmview execute "!rm -i ~/.vim/view/~=+" . substitute(substitute(expand('%:p'), $HOME . '/', "", ""), "/", "=+", "g") . "="
 command! P4Ed execute "!p4 edit " . expand('%p')
 
 
@@ -180,18 +174,6 @@ hi DiffText     ctermfg=Yellow        ctermbg=Red
 
 set maxmempattern=300000
 
-" line:
-nmap <c-c><c-l> <Plug>SlimeLineSend
-nmap \in ain-<ESC>wi'<ESC>$a)<ESC><s-v><Plug>SlimeRegionSend<ESC>uuuh
-" form:
-nmap <c-c><c-f> v%<Plug>SlimeRegionSend<ESC>
-" move to nearest ( then form:
-nmap <c-c><c-h> [(v%<Plug>SlimeRegionSend<ESC>
-" macroexpand-1 form:
-nmap <c-c><c-m> i(macroexpand-1 '<ESC>l%a)<ESC>%v%<Plug>SlimeRegionSend<ESC>uu
-"(use :reload-all 'my-project.core)
-" #_ to toss out next read form
-
 augroup myvimrc
   au!
   au BufWritePost .vimrc,_vimrc,vimrc,.gvimrc,_gvimrc,gvimrc so $MYVIMRC " | if has('gui_running') | so $MYGVIMRC | endif
@@ -216,9 +198,9 @@ let g:syntastic_always_populate_loc_list = 1
 
 "map \ln :lnext<cr>
 "map \lp :lprev<cr>
-" If there's only one error, these fail, use :ll. :/
+" If there's only one error, these fail, use :ll
 " Also :lopen :lclose
-" Now fixing \ln \lp
+" Found a fix for \ln \lp
 fun! LocFix(cmd)
   redir => output
   silent! exec a:cmd
@@ -229,7 +211,7 @@ fun! LocFix(cmd)
     echom output
   endif
 endfun
-map \ln :call LocFix(":lnext")<CR>
+map \ln :call LocFix(":lnext")<cr>
 map \lp :call LocFix(":lprev")<cr>
 let g:syntastic_cpp_checkers = ['cppcheck', 'gcc']
 let g:syntastic_c_checkers = ['cppcheck', 'splint', 'gcc']
@@ -264,6 +246,28 @@ set mouse=a
 
 let g:buftabline_indicators = 1
 
+let g:large_file = 1024 * 1024 * 1024 " 1 GB is 'large'
+" don't make swap file for large files
+autocmd BufReadPre * let f=expand("<afile>") | if getfsize(f)
+            \ > g:large_file | set noswapfile | endif
+
+map \justify gwip
+set nojoinspaces " don't double-space after periods...
+"map \table :TableModeToggle
+"already \tm
+" use || for boundary row
+let g:table_mode_corner='+'
+let g:table_mode_corner_corner='+'
+let g:table_mode_header_fillchar='='
+
+"let g:ctrlp_custom_ignore = {
+"  \ 'dir':  '\v[\/](\.(git|hg|svn)|quicklisp)$',
+"  \ 'file': '\v\.(exe|so|dll|o)$',
+"  \ 'link': 'some_bad_symbolic_links',
+"  \ }
+
+
+" mostly lisp stuff
 " for lisp, see also .vim/after/syntax/lisp.vim to fix up
 " some stuff from default vim syntax.
 " Useful commands to figure out syntax issues:
@@ -292,7 +296,7 @@ let g:slimv_repl_split_size=15
 let g:scheme_builtin_swank=1
 let g:slimv_timeout=10
 let g:slimv_fasl_directory = '/tmp/'
-let g:slimv_swank_cmd='!xterm -iconic -e sbcl --dynamic-space-size 10GB --core ~/sbcl-core --load /home/kevin/.vim/bundle/slimv/slime/start-swank.lisp &'
+let g:slimv_swank_cmd='!xterm -iconic -e sbcl --dynamic-space-size 10GB --core ~/sbcl-core --load ' . $HOME . '/.vim/bundle/slimv/slime/start-swank.lisp &'
 "let g:swank_log=1
 " also consider in vim :set verbosefile=test.log && :set verbose=20
 
@@ -314,26 +318,6 @@ map \gF gF<esc>:call WindowSwap#EasyWindowSwap()<cr><C-w>w:call WindowSwap#EasyW
 map \sblint :e! scratch<cr>:1,$d<cr>:silent r!sblint<cr>
 
 "let g:vlime_compiler_policy = {"DEBUG": 3}
-
-let g:large_file = 1024 * 1024 * 1024 " 1 GB is 'large'
-" don't make swap file for large files
-autocmd BufReadPre * let f=expand("<afile>") | if getfsize(f)
-            \ > g:large_file | set noswapfile | endif
-
-map \justify gwip
-set nojoinspaces " don't double-space after periods...
-"map \table :TableModeToggle
-"already \tm
-" use || for boundary row
-let g:table_mode_corner='+'
-let g:table_mode_corner_corner='+'
-let g:table_mode_header_fillchar='='
-
-"let g:ctrlp_custom_ignore = {
-"  \ 'dir':  '\v[\/](\.(git|hg|svn)|quicklisp)$',
-"  \ 'file': '\v\.(exe|so|dll|o)$',
-"  \ 'link': 'some_bad_symbolic_links',
-"  \ }
 
 function! SlimvXrefSysDependsOn()
     call SlimvXrefBase( 'System Depends On: ', ':sys-depends-on' )
@@ -367,12 +351,52 @@ endfunction
 map ,ci :call SlimvClouseauInspect()<cr>
 map ,fc  :call SlimvFindPackage()<cr>:call SlimvEval(['(' . SlimvSelectSymbolExt() . ')'])<cr>
 
+function! CreateQuicklispSymlink()
+  " (Thanks AI)
+  " Get the full path of the current file
+  let l:filepath = expand('%:p')
+  if l:filepath == ''
+    echoerr "No file loaded in the buffer."
+    return
+  endif
+
+  " Get the directory of the file
+  let l:filedir = fnamemodify(l:filepath, ':h')
+  let l:dirname = fnamemodify(l:filedir, ':t')
+
+  " Define the target symlink path
+  let l:link_path = expand('~/quicklisp/local-projects/' . l:dirname)
+
+  " If the symlink already exists, notify the user
+  if filereadable(l:link_path) || isdirectory(l:link_path)
+    echoerr "Link or directory already exists at: " . l:link_path
+    return
+  endif
+
+  " Construct and run the shell command to create the symlink
+  let l:cmd = 'ln -s ' . shellescape(l:filedir) . ' ' . shellescape(l:link_path)
+  call system(l:cmd)
+
+  " Report success or failure
+  if v:shell_error
+    echoerr "Failed to create symlink."
+  else
+    echom "Symlink created: " . l:link_path . " -> " . l:filedir
+  endif
+endfunction
+
+command! QuicklispLink call CreateQuicklispSymlink()
+
+" end mostly lisp stuff
+
+
+" grepper plugin, see refactoring notes at bottom
 let g:grepper = {}
 let g:grepper.tools = ['ag']
 let g:grepper.dir = 'repo,cwd'
 command! Todo :Grepper -noprompt -query '(todo|fixme)'
 
-" ALE plugin options
+" ALE plugin (linting) options
 let g:ale_warn_about_trailing_whitespace=0
 let g:ale_pattern_options = {'.c$\|.h$\|.cpp$\|.cxx$': {'ale_enabled': 0}}
 
@@ -427,51 +451,61 @@ let g:NERDCommentEmptyLines = 1
 set clipboard=unnamedplus "automatically make yank/delete use system clipboard
 
 
-function! CreateQuicklispSymlink()
-  " Get the full path of the current file
-  let l:filepath = expand('%:p')
-  if l:filepath == ''
-    echoerr "No file loaded in the buffer."
-    return
-  endif
 
-  " Get the directory of the file
-  let l:filedir = fnamemodify(l:filepath, ':h')
-  let l:dirname = fnamemodify(l:filedir, ':t')
+source $HOME/.vimrc-lisp-refactoring
 
-  " Define the target symlink path
-  let l:link_path = expand('~/quicklisp/local-projects/' . l:dirname)
-
-  " If the symlink already exists, notify the user
-  if filereadable(l:link_path) || isdirectory(l:link_path)
-    echoerr "Link or directory already exists at: " . l:link_path
-    return
-  endif
-
-  " Construct and run the shell command to create the symlink
-  let l:cmd = 'ln -s ' . shellescape(l:filedir) . ' ' . shellescape(l:link_path)
-  call system(l:cmd)
-
-  " Report success or failure
-  if v:shell_error
-    echoerr "Failed to create symlink."
-  else
-    echom "Symlink created: " . l:link_path . " -> " . l:filedir
-  endif
-endfunction
-
-" Optional: Bind it to a command
-command! QuicklispLink call CreateQuicklispSymlink()
-
-
-source /home/kevin/.vimrc-lisp-refactoring
-
-source /home/kevin/.vimrc-claude
+source $HOME/.vimrc-claude
 
 execute pathogen#infect()
 Helptags
 
-" Random vim notes to self to save a google
+" ==========
+" ==========
+"
+" Obsolete/didn't like the settings:
+"
+" looking for a more intuitive way to handle closing buffers when the
+" slime repl is one of them...
+" Though :q is convenient, just going to train myself to :bd instead. or :Bd
+" now with vim-bbye.
+"cnoreabbrev wq w<bar>bd
+"cnoreabbrev q bfirst<bar>bd#
+" note: now you must use :quit to quit...
+" eh, didn't like it...
+
+"set formatoptions+=t
+" old plugin manager, just use pathogen
+"set runtimepath+=$HOME/.vim/marc-plugins/vim-addon-manager
+" activate the addons called 'vim-addon-manager', 'JSON', 'name1', 'name2'
+" This adds them to runtimepath and ensures that plugin/* and after/plugin/*
+" files are sourced
+"call scriptmanager#Activate(['vim-addon-manager','JSON',"vim-addon-fcsh"])
+
+"map \gc :w<cr>:!git commit -a -m "
+" learn to use fugitive...
+"useless shortcut that has only ever gotten in my way...
+"imap zz <C-X><C-O>
+"au BufAdd,BufNewFile * nested tab sball
+
+" obsolete slime-vim plugin stuff, used to use for clojure
+" line:
+"nmap <c-c><c-l> <Plug>SlimeLineSend
+"nmap \in ain-<ESC>wi'<ESC>$a)<ESC><s-v><Plug>SlimeRegionSend<ESC>uuuh
+" form:
+"nmap <c-c><c-f> v%<Plug>SlimeRegionSend<ESC>
+" move to nearest ( then form:
+"nmap <c-c><c-h> [(v%<Plug>SlimeRegionSend<ESC>
+" macroexpand-1 form:
+"nmap <c-c><c-m> i(macroexpand-1 '<ESC>l%a)<ESC>%v%<Plug>SlimeRegionSend<ESC>uu
+"(use :reload-all 'my-project.core)
+" #_ to toss out next read form
+
+
+
+" ============
+" ============
+"
+" Random vim notes to self to save a google or :help
 "
 " <leader> is typically \...
 "
