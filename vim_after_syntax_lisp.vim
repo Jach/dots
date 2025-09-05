@@ -20,7 +20,7 @@ syntax match lispEscapeSpecial "[^[:space:]()\"]*[^[:space:]()\"']*:\?[*+][^[:sp
 " this might not be popular because these are custom, not part of the lang,
 " but I like them to be highlighted.
 syntax match lispDecl "\([a-z_0-9-.]*:\?def-[a-z0-9-.?]*\)"
-syntax match lispDecl "\([a-z_0-9-.]*:\?define-[a-z0-9-.?]*\)"
+syntax match lispDecl "\([a-z_0-9-.]*:\?define-\?[a-z0-9-.?]*\)"
 syntax match lispDecl "\([a-z_0-9-.]*:\?with-[a-z0-9-.?]*\)"
 syntax match lispDecl "\([a-z_0-9-.]*:\?make-[a-z0-9-.?]*\)"
 
