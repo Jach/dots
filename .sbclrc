@@ -23,6 +23,11 @@
   (ql:quickload :com.inuoe.jzon)
   (ql:quickload :cl-ppcre)
   (ql:quickload :cl-webdriver-client)
+  (ql:quickload :ironclad)
+  (ql:quickload :sdl2)
+  (ql:quickload :cl-opengl)
+  (ql:quickload :spinneret)
+  (ql:quickload :hunchentoot)
 
   (uiop:dump-image "sbcl-core"))
 
@@ -204,3 +209,81 @@
   ; wait
   (sb-sprof:stop-profiling)
   (sb-sprof:report :max 40))
+
+
+(defun num2bin (num)
+  (format nil "#b~b" num))
+
+(defun num2hex (num)
+  (format nil "#x~x" num))
+
+(defun hexdump (address length &optional (bytes-per-line 16))
+  "Display a hexdump of memory starting at ADDRESS for LENGTH bytes.
+   Similar to xxd or hexdump utilities.
+   BYTES-PER-LINE controls how many bytes are shown per line (default 16)."
+  (let ((start-addr address))
+    (loop for offset from 0 below length by bytes-per-line
+          do (let ((line-length (min bytes-per-line (- length offset))))
+               ;; Print address
+               (format t "~8,'0x: " (+ start-addr offset))
+
+               ;; Print hex bytes in groups of 2
+               (loop for i from 0 below bytes-per-line
+                     do (if (< i line-length)
+                            (let ((byte (sb-sys:sap-ref-8
+                                        (sb-sys:int-sap (+ address offset i)) 0)))
+                              (format t "~2,'0x" byte)
+                              (when (oddp i) (format t " ")))
+                            (progn
+                              (format t "  ")
+                              (when (oddp i) (format t " ")))))
+
+               ;; Add extra space before ASCII section
+               (format t " |")
+
+               ;; Print ASCII interpretation
+               (loop for i from 0 below line-length
+                     do (let ((byte (sb-sys:sap-ref-8
+                                    (sb-sys:int-sap (+ address offset i)) 0)))
+                          (if (and (>= byte 32) (<= byte 126))
+                              (format t "~c" (code-char byte))
+                              (format t "."))))
+
+               ;; Close ASCII section and newline
+               (format t "|~%")))))
+
+(defun hexdump-object (object &key (extra-bytes 0) (offset 0))
+  "Hexdump the memory representation of a Lisp object.
+   EXTRA-BYTES specifies how many additional bytes to show after the object.
+   OFFSET is the byte offset from the object's address (can be negative)."
+  (let* ((base-addr (sb-kernel:get-lisp-obj-address object))
+         (addr (+ base-addr offset))
+         ;; Estimate object size based on type
+         (base-size (cond
+                      ((consp object) 16)        ; cons cell
+                      ((symbolp object) 24)      ; symbol
+                      ((stringp object) (+ 24 (length object))) ; string + header
+                      ((vectorp object) (+ 24 (* (length object) 8))) ; vector + elements
+                      ((numberp object) 16)      ; numbers
+                      (t 32)))                   ; default guess
+         (total-size (+ base-size extra-bytes)))
+    (format t "Object: ~S~%" object)
+    (format t "Base address: 0x~x~%" base-addr)
+    (when (/= offset 0)
+      (format t "Offset: ~d bytes~%" offset)
+      (format t "Actual address: 0x~x~%" addr))
+    (format t "Estimated size: ~d bytes (+ ~d extra)~%~%" base-size extra-bytes)
+    (hexdump addr total-size)))
+
+(defun memory-peek (object &optional (count 8))
+  "Quick peek at memory - shows COUNT bytes as both hex and decimal."
+  (let ((address (sb-kernel:get-lisp-obj-address object)))
+    (format t "Memory at 0x~8,'0x:~%" address)
+    (loop for i from 0 below count
+          for byte = (sb-sys:sap-ref-8 (sb-sys:int-sap (+ address i)) 0)
+          do (format t "  +~d: 0x~2,'0x (~3d) ~c~%"
+                     i byte byte
+                     (if (and (>= byte 32) (<= byte 126))
+                         (code-char byte)
+                         #\.)))))
+

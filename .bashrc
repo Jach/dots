@@ -318,7 +318,7 @@ list-proton() {
     awk -F'\t' '{printf "%-55s\t%s\t%s\n", $1, $2, $3}' | sort -k1,1
 }
 
-alias vi=nvim
+#alias vi=nvim
 
 ups-load() {
   # multiply by 10 for approx. wattage
@@ -336,4 +336,5 @@ fortune -a
 
 # leave commented out?
 #export PATH="/home/kevin/apps/miniconda3/bin:$PATH"  # commented out by conda initialize
+
 

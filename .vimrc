@@ -29,6 +29,9 @@ map \tabs4 :set tabstop=4<CR>:set shiftwidth=4<CR>:set softtabstop=4
 " apparently 5 sometimes?
 " map \tabs5 :set tabstop=5<CR>:set shiftwidth=5<CR>:set softtabstop=5
 
+" prevents windows from resizing when other windows close
+"set noequalalways
+
 " no need to reach all the way to escape key:
 imap jk <Esc>
 
@@ -164,10 +167,12 @@ else
   " orig: guicursor=n-v-c-sm:block,i-ci-ve:ver25,r-cr-o:hor20
   set title
   set mouse=r " allow highlighting with mouse and middle-click pasting
+  " potentially other options in ~/.config/nvim/plugin/init.lua for lua-only
+  " things.
 endif
 
 " diff color scheme:
-hi DiffAdd      ctermfg=NONE          ctermbg=Green
+hi DiffAdd      ctermfg=NONE          ctermbg=DarkGreen
 hi DiffChange   ctermfg=NONE          ctermbg=NONE
 hi DiffDelete   ctermfg=LightBlue     ctermbg=Red
 hi DiffText     ctermfg=Yellow        ctermbg=Red
@@ -282,7 +287,7 @@ let g:table_mode_header_fillchar='='
 " Anyway,
 " slimv:
 "let g:slimv_indent_disable=1
-"let g:slimv_completions='fuzzy'
+let g:slimv_completions='fuzzy'
 " helps with fuzzy defs, e.g. mvb<tab> to multiple-value-bind. if commented out, will use swank completions, which is more accurate in context and handles package-local nicknames but less helpful when you only know part of the identifier symbol
 " self-suggestion: locally set this to swank when dealing with package local
 " nicknames, otherwise keep it fuzzy.
@@ -293,8 +298,10 @@ let g:paredit_mode=0
 let g:lisp_rainbow=1
 let g:slimv_repl_split=2
 let g:slimv_repl_split_size=15
+"let g:slimv_sldb_split=2
+let g:slimv_indent_maxlines=200
 let g:scheme_builtin_swank=1
-let g:slimv_timeout=10
+let g:slimv_timeout=15
 let g:slimv_fasl_directory = '/tmp/'
 let g:slimv_swank_cmd='!xterm -iconic -e sbcl --dynamic-space-size 10GB --core ~/sbcl-core --load ' . $HOME . '/.vim/bundle/slimv/slime/start-swank.lisp &'
 "let g:swank_log=1
@@ -592,14 +599,12 @@ Helptags
 " :Grepper -noprompt -query symbol
 " (can use cword, or just :Grepper<cr> and type it in
 " populates both quickfix list and location list.
-" :cdo %s/symbol/replacement/gce
+" :cdo %S/symbol/replacement/gce
 " -> run search-replace over all quickfix spots. the e suppresses errors.
-"  (also can use (Subvert)
+"    (the %S uses Subvert from vim-abolish to smartly handle case)
 " :cdo update
 " -> saves buffers
 "  (can just add this to the end of the other cdo command as | update)
-" :cdfo :bd
-" -> close the buffers
 "
 " also generally useful, :cclose to close the quickfix window e.g. after
 " jumping to a file
