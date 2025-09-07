@@ -84,21 +84,24 @@
     :for k being the hash-key :using (hash-value v) of hash
     :nconc (list k v)))
 
-(locally
-  (declare #+sbcl (sb-ext:muffle-conditions sb-kernel:redefinition-warning))
-  (handler-bind
-    (#+sbcl (sb-kernel:redefinition-warning #'muffle-warning))
-(defmethod print-object ((hash hash-table) out)
-  "Print hash table like a data object, e.g.
-{:A 1
- :B 2}"
-  (format t "{~{~s ~s~^~% ~}}" (hash-to-plist hash))
-  #|(loop
-    :initially (format out "{")
-    :for k being the hash-key :using (hash-value v) of hash
-    :do (format out "~% ~s ~s" k v)
-    :finally (format out "~%}~%"))|#)
-))
+(defun pprint-hash-table (stream hash)
+  "Pretty-printer for hash tables in the style:
+   {key1 val1
+   key2 val2}"
+  (let ((plist (hash-to-plist hash)))
+    (pprint-logical-block (stream nil :prefix "{" :suffix "}")
+                          (loop for (k v) on plist by #'cddr
+                                for first = t then nil
+                                do
+                                (unless first
+                                  (pprint-newline :mandatory stream))
+                                (write k :stream stream :pretty t)
+                                (princ " " stream)
+                                (write v :stream stream :pretty t)))))
+
+;; install as the default printer
+(set-pprint-dispatch 'hash-table #'pprint-hash-table)
+
 
 ;(declaim (optimize (debug 3)))
 ;(declaim (optimize (speed 3) (space 3) (debug 0) (safety 0)))
