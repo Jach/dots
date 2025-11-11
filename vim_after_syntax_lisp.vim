@@ -60,3 +60,12 @@ syntax match lispNilFormComment /#+nil\s\+\S\+/ containedin=ALL
 highlight default link lispNilFormComment Comment
 
 " can still mess up with nested forms but better than before..
+
+" custom keywords like :foo are (or rather aren't) highlighted like any plain
+" symbol. I want them to be highlighted like a quoted symbol 'foo or a keyword
+" like other keywords.
+" 'foo is a lispAtom with a lispAtomMark (') in front of it.
+" lispKey is a hardcoded list of keywords. Let's add a match for starting with
+" a colon...
+
+syntax match lispKey /:[^()'`,"; \t]\+/
