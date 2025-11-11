@@ -122,9 +122,6 @@ function extract2end() {
 
 #PERL_MB_OPT="--install_base \"/home/kevin/perl5\""; export PERL_MB_OPT;
 #PERL_MM_OPT="INSTALL_BASE=/home/kevin/perl5"; export PERL_MM_OPT;
-shopt -s histappend
-export HISTSIZE=100000
-export HISTFILESIZE=100000
 export PATH=$PATH:$HOME/.roswell/bin
 
 stairon() {
@@ -338,3 +335,6 @@ fortune -a
 #export PATH="/home/kevin/apps/miniconda3/bin:$PATH"  # commented out by conda initialize
 
 
+shopt -s histappend
+export HISTSIZE=-1
+export HISTFILESIZE=-1
