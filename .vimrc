@@ -36,9 +36,9 @@ map \tabs4 :set tabstop=4<CR>:set shiftwidth=4<CR>:set softtabstop=4
 imap jk <Esc>
 
 
-map \b i\textbf{<ESC>ea}<ESC>
+"map \b i\textbf{<ESC>ea}<ESC>
 "map \p i(<ESC>ea)<ESC>
-map \t i&lt;<ESC>ea&gt;<ESC>
+"map \t i&lt;<ESC>ea&gt;<ESC>
 map \tm :tabmove
 "map \tn :tabnext<cr>
 "map \tp :tabprevious<cr>
@@ -108,17 +108,17 @@ map \gpp :!g++ <C-R>=expand("%:t")<cr><cr>
 "set makeprg=g++\ %
 
 " OmniCppComplete
-let OmniCpp_NamespaceSearch = 1
-let OmniCpp_GlobalScopeSearch = 1
-let OmniCpp_ShowAccess = 1
-let OmniCpp_ShowPrototypeInAbbr = 1 " show function parameters
-let OmniCpp_MayCompleteDot = 1 " autocomplete after .
-let OmniCpp_MayCompleteArrow = 1 " autocomplete after ->
-let OmniCpp_MayCompleteScope = 1 " autocomplete after ::
-let OmniCpp_DefaultNamespaces = ["std", "_GLIBCXX_STD"]
+"let OmniCpp_NamespaceSearch = 1
+"let OmniCpp_GlobalScopeSearch = 1
+"let OmniCpp_ShowAccess = 1
+"let OmniCpp_ShowPrototypeInAbbr = 1 " show function parameters
+"let OmniCpp_MayCompleteDot = 1 " autocomplete after .
+"let OmniCpp_MayCompleteArrow = 1 " autocomplete after ->
+"let OmniCpp_MayCompleteScope = 1 " autocomplete after ::
+"let OmniCpp_DefaultNamespaces = ["std", "_GLIBCXX_STD"]
 " automatically open and close the popup menu / preview window
 "au CursorMovedI,InsertLeave * if pumvisible() == 0|silent! pclose|endif
-"set completeopt=menuone,menu,longest,preview
+set completeopt=menu,preview
 "set ofu=syntaxcomplete#Complete
 
 " Pydiction
@@ -135,7 +135,7 @@ fun! OmniComplete()
   else
     return "\<C-x>\<C-o>"
   endfun
-"inoremap <silent> <S-Tab> <C-R>=OmniComplete()<CR>
+inoremap <silent> <S-Tab> <C-R>=OmniComplete()<CR>
 
 au BufWinLeave *? silent! mkview "no silent
 au BufWinEnter *? silent! loadview "no !
@@ -405,7 +405,7 @@ command! Todo :Grepper -noprompt -query '(todo|fixme)'
 
 " ALE plugin (linting) options
 let g:ale_warn_about_trailing_whitespace=0
-let g:ale_pattern_options = {'.c$\|.h$\|.cpp$\|.cxx$': {'ale_enabled': 0}}
+let g:ale_pattern_options = {'.c$\|.h$\|.cpp$\|.cxx|.tex$': {'ale_enabled': 0}}
 
 
 function! StripTrailingWhitespace()
@@ -458,10 +458,11 @@ let g:NERDCommentEmptyLines = 1
 set clipboard=unnamedplus "automatically make yank/delete use system clipboard
 
 
-
-source $HOME/.vimrc-lisp-refactoring
-
-source $HOME/.vimrc-claude
+let who=trim(system('whoami')) " notes: using $USER failed as it wasn't reset from running su. Could use systemlist()[0] instead, the issue requiring trim() was just that there's a trailing newline
+if who !=# 'root' " note: != by itself allows for case-insensitive comparison when ignorecase is set, !=# forces case-sensitive, and !=? forces case-insensitive.
+  source $HOME/.vimrc-lisp-refactoring
+  source $HOME/.vimrc-claude
+endif
 
 execute pathogen#infect()
 Helptags
