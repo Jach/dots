@@ -14,6 +14,10 @@ if [[ $- != *i* ]] ; then
 	return
 fi
 
+# scp completions were broken until doing this...
+if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+fi
 
 # Put your fun stuff here.
 export EDITOR=vim
@@ -326,6 +330,8 @@ ups-load() {
 tekken-rng() {
   curl -s 'https://www.random.org/integers/?num=1&min=1&max=35&col=1&base=10&format=html&rnd=new' | grep 'class="data"' | awk -F '>' '{print $2}'
 }
+
+alias npm=pnpm
 
 export PATH=$HOME/git_repos/not_mine/gamescope/build/src/:$PATH
 

@@ -4,7 +4,7 @@
 " fix up vim's built-in lisp highlighting of symbols to allow earmuffed
 " question marks, e.g. *is-foo?*
 
-" Thank you Claude...
+" Thank you Claude for some initial help...
 " https://claude.ai/share/f1f593be-c9b8-4220-9d91-32db15a6ce30
 
 " can run
@@ -16,7 +16,7 @@ syntax match lispEscapeSpecial "[^[:space:]()\"]*[^[:space:]()\"']*:\?[*+][^[:sp
 "syntax match lispEscapeSpecial "\w\?[a-z_0-9-.]*:\?\*\w[a-z_0-9-.?]*\*"
 "highlight lispEscapeSpecial ctermbg=red guibg=red
 
-" now fix up indentation (actually just syntax highlighting...) with custom define/with/make macros.
+" now fix up indentation (actually just syntax highlighting, proper indentation still requires evaluation...) with custom define/with/make macros.
 " this might not be popular because these are custom, not part of the lang,
 " but I like them to be highlighted.
 syntax match lispDecl "\([a-z_0-9-.]*:\?def-[a-z0-9-.?]*\)"
@@ -24,7 +24,7 @@ syntax match lispDecl "\([a-z_0-9-.]*:\?define-\?[a-z0-9-.?]*\)"
 syntax match lispDecl "\([a-z_0-9-.]*:\?with-[a-z0-9-.?]*\)"
 syntax match lispDecl "\([a-z_0-9-.]*:\?make-[a-z0-9-.?]*\)"
 
-" Note: indentation and syntax highlighting are somewhat separate.
+" Note: indentation and syntax highlighting are separate.
 " Something might be in lispFunc but be expected to indent like a lispDecl --
 " e.g. various with- macros.
 " The default list is seen by running :set lispwords?

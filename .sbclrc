@@ -17,6 +17,7 @@
   ; make sure to update-ql and restart sbcl first
   ; add any quickloads here that we might want as part of core not captured by .sbclrc
   ; numcl, vgplot
+  ; note.. numcl is gone from 2026-01-01...
   (ql:quickload :dexador)
   (ql:quickload :plump)
   (ql:quickload :lquery)
@@ -81,25 +82,30 @@
 (defun hash-to-plist (hash)
   "Turns key-value hash table to pair list of (k1 v1 k2 v2 ...)"
   (loop
-    :for k being the hash-key :using (hash-value v) of hash
-    :nconc (list k v)))
+    for k being the hash-key using (hash-value v) of hash
+    nconc (list k v)))
+
+#|
+clean-up, an old version of the below first converted the hash to a plist
+and iterated like:
+loop for (k v) on plist by #'cddr
+I think I kept it around just for that little cddr hack. But hash->plist is unnecessary.
+|#
 
 (defun pprint-hash-table (stream hash)
   "Pretty-printer for hash tables in the style:
    {key1 val1
    key2 val2}"
-  (let ((plist (hash-to-plist hash)))
-    (pprint-logical-block (stream nil :prefix "{" :suffix "}")
-                          (loop for (k v) on plist by #'cddr
-                                for first = t then nil
-                                do
-                                (unless first
-                                  (pprint-newline :mandatory stream))
-                                (write k :stream stream :pretty t)
-                                (princ " " stream)
-                                (write v :stream stream :pretty t)))))
+  (pprint-logical-block (stream nil :prefix "{" :suffix "}")
+                        (loop for k being the hash-key using (hash-value v) of hash
+                              for first = t then nil
+                              do
+                              (unless first
+                                (pprint-newline :mandatory stream))
+                              (write k :stream stream :pretty t)
+                              (princ " " stream)
+                              (write v :stream stream :pretty t))))
 
-;; install as the default printer
 (set-pprint-dispatch 'hash-table #'pprint-hash-table)
 
 
