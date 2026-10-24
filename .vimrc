@@ -30,11 +30,38 @@ map \tabs4 :set tabstop=4<CR>:set shiftwidth=4<CR>:set softtabstop=4
 " map \tabs5 :set tabstop=5<CR>:set shiftwidth=5<CR>:set softtabstop=5
 
 " prevents windows from resizing when other windows close
-"set noequalalways
+set noequalalways
+
+" silently reload changed files when the buffer has no unsaved changes
+set autoread
+" may be needed too, test:
+" augroup AutoReload
+"     autocmd!
+"     autocmd FocusGained,BufEnter,CursorHold,CursorHoldI * if mode() !=# 'c' | checktime | endif
+"   augroup END
+" call timer_start(2000, {-> execute('checktime')}, {'repeat': -1})
+
 
 " no need to reach all the way to escape key:
 imap jk <Esc>
 
+" single ctrl input window switching
+nnoremap <C-h> <C-w>h
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+nnoremap <C-l> <C-w>l
+
+" Start interactive EasyAlign in visual mode (e.g. vipga)
+xmap ga <Plug>(EasyAlign)
+" Start interactive EasyAlign for a motion/text object (e.g. gaip)
+nmap ga <Plug>(EasyAlign)
+let g:easy_align_delimiters = {
+\ '/': {
+\     'pattern':         '//\+\|/\*\|\*/',
+\     'delimiter_align': 'l',
+\     'ignore_groups':   ['!Comment'] },
+\  ';': { 'pattern': ';\+', 'delimiter_align': 'l', 'ignore_groups': ['!Comment']  }
+\ }
 
 "map \b i\textbf{<ESC>ea}<ESC>
 "map \p i(<ESC>ea)<ESC>
@@ -302,6 +329,7 @@ let g:slimv_repl_split_size=15
 "let g:slimv_indent_maxlines=200
 let g:scheme_builtin_swank=1
 let g:slimv_timeout=15
+let g:slimv_updatetime = 100 " default 100 (ms), larger values may help prevent it from interfering with vim's command buffer (like ctrl+w + x) but they also mysteriously make quickloads much slower.
 let g:slimv_fasl_directory = '/tmp/'
 let g:slimv_swank_cmd='!xterm -iconic -e sbcl --dynamic-space-size 10GB --core ~/sbcl-core --load ' . $HOME . '/.vim/bundle/slimv/slime/start-swank.lisp &'
 "let g:swank_log=1
@@ -325,6 +353,8 @@ map \gF gF<esc>:call WindowSwap#EasyWindowSwap()<cr><C-w>w:call WindowSwap#EasyW
 map \sblint :e! scratch<cr>:1,$d<cr>:silent r!sblint<cr>
 
 "let g:vlime_compiler_policy = {"DEBUG": 3}
+"to debug slimv, typically :set verbosefile=/tmp/log.log and :set verbose=20. Then :set verbose=0 when done.
+"There is also debug and log vars in swank.py
 
 function! SlimvXrefSysDependsOn()
     call SlimvXrefBase( 'System Depends On: ', ':sys-depends-on' )
@@ -428,7 +458,8 @@ set secure " but not allowing them to use autocmd, shell, and write commands
 
 "set autochdir
 
-set rtp+=~/git_repos/not_mine/fzf
+"set rtp+=~/git_repos/not_mine/fzf
+set rtp+=~/.fzf
 " remap ctrl-p, fzf is better...
 "let g:ctrlp_map='<c-`>'
 map <c-p> :FZF<cr>
