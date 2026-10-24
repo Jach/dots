@@ -183,7 +183,8 @@ export PATH=$PATH:$HOME/git_repos/not_mine/srt-resync
 
 #export FZF_DEFAULT_COMMAND="ag . -l --ignore '*.fasl' --ignore '*.pyc' --nocolor --hidden"
 export FZF_DEFAULT_COMMAND="ag -l"
-[ -f /home/kevin/.fzf.bash ] && source /home/kevin/.fzf.bash
+export FZF_CTRL_R_OPTS="--bind esc:print-query+abort,ctrl-c:print-query+abort"
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/home/kevin/google-cloud-sdk/path.bash.inc' ]; then . '/home/kevin/google-cloud-sdk/path.bash.inc'; fi
@@ -263,7 +264,7 @@ livetl() {
 }
 
 livetl-en() {
-  whisper-ctranslate2 --language English --live_transcribe True --model large-v3 --live_volume_threshold 0.01
+  whisper-ctranslate2 --language English --live_transcribe True --model large-v3-turbo --live_volume_threshold 0.01
 }
 
 whisper-stdout() {
@@ -331,6 +332,14 @@ tekken-rng() {
   curl -s 'https://www.random.org/integers/?num=1&min=1&max=35&col=1&base=10&format=html&rnd=new' | grep 'class="data"' | awk -F '>' '{print $2}'
 }
 
+start-swank() {
+  local lisp="${1:-sbcl}"
+  local port="${2:-4005}"
+  echo "Starting $lisp with swank on port $port"
+  export SWANK_PORT=$port
+  "$lisp" --load $HOME/.vim/bundle/slimv/slime/start-swank.lisp
+}
+
 alias npm=pnpm
 
 export PATH=$HOME/git_repos/not_mine/gamescope/build/src/:$PATH
@@ -340,7 +349,21 @@ fortune -a
 # leave commented out?
 #export PATH="/home/kevin/apps/miniconda3/bin:$PATH"  # commented out by conda initialize
 
+remote-mysql() {
+  ssh -N -L 3306:127.0.0.1:3306 ovh
+}
+
+comfy-krita() {
+  # having the Vision Tools plugin enabled conflicts with something in the image diffusion plugin that forces running the bundled comfy UI from outside the krita app image.
+  # hopefully can fix if the diffusion stuff ever updates to krita 6
+  cd ~/git_repos/non-git-storage/pykrita/ComfyUI/ComfyUI && ../venv/bin/python main.py
+}
+
+stream-audio() {
+  while true; do ffmpeg -nostdin -loglevel warning -f pulse -i @DEFAULT_MONITOR@ -ac 2 -c:a libopus -b:a 160k -f ogg -content_type audio/ogg -listen 1 http://100.90.239.79:5743/stream.ogg; sleep 1; done
+}
 
 shopt -s histappend
 export HISTSIZE=-1
 export HISTFILESIZE=-1
+
