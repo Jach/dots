@@ -18,17 +18,8 @@
   ; add any quickloads here that we might want as part of core not captured by .sbclrc
   ; numcl, vgplot
   ; note.. numcl is gone from 2026-01-01...
-  (ql:quickload :dexador)
-  (ql:quickload :plump)
-  (ql:quickload :lquery)
-  (ql:quickload :com.inuoe.jzon)
-  (ql:quickload :cl-ppcre)
-  (ql:quickload :cl-webdriver-client)
-  (ql:quickload :ironclad)
-  (ql:quickload :sdl2)
-  (ql:quickload :cl-opengl)
-  (ql:quickload :spinneret)
-  (ql:quickload :hunchentoot)
+  (ql:quickload '(:dexador :plump :lquery :com.inuoe.jzon :cl-ppcre :cl-webdriver-client :ironclad :sdl2 :cl-opengl :spinneret :hunchentoot
+                  :cmu-infix :static-vectors :trivia :cl-dbi :dbd-sqlite3 :djula))
 
   (uiop:dump-image "sbcl-core"))
 
@@ -124,6 +115,8 @@ I think I kept it around just for that little cddr hack. But hash->plist is unne
 
 ;(format t "Your cwd is ~s.~%" (sb-posix:getcwd))
 
+(defun optimization-current ()
+  sb-c::*policy*)
 ; (sb-ext:describe-compiler-policy)
 ; sb-c::*policy*
 ; (sb-cltl2:declaration-information 'optimize)
@@ -193,11 +186,17 @@ I think I kept it around just for that little cddr hack. But hash->plist is unne
 (defun asdf-here ()
   (push (uiop:getcwd) asdf:*central-registry*))
 
+;; Helpers for navigating method call chains
+
 (unless (find-package :closer-mop)
   #+quicklisp (ql:quickload 'closer-mop))
+
 (defun show-applicable-methods (method class-symbol)
+  "e.g.: (show-applicable-methods #'initialize-instance 'some-class) -> list of applicable"
   (closer-mop:compute-applicable-methods-using-classes method (list (find-class class-symbol))))
+
 (defun show-effective-method (method class-symbol)
+  "e.g.: (show-effective-method #'initialize-instance 'some-class) -> progn form of calls in order"
   (closer-mop:compute-effective-method method
                                        (closer-mop:find-method-combination method 'standard nil)
                                        (show-applicable-methods method class-symbol)))
@@ -296,3 +295,22 @@ I think I kept it around just for that little cddr hack. But hash->plist is unne
                          (code-char byte)
                          #\.)))))
 
+;;; GENERATE-NORMALIZED-RANDOM-LIST returns a sequence of normalized
+;;; random numbers. N is the number of elements of the sequence.
+(defun generate-normalized-random-list (n max-value)
+  (loop repeat n
+        for value = (random max-value)
+        sum value into total
+        collect value into denormalized-list
+        finally
+        (return (loop for element in denormalized-list
+                      with average = (/ total n)
+                      collect (- element average)))))
+; test:
+;(format t "~&Size: ")
+;(let ((n (read)))
+;  (format t "Maximum value: ")
+;  (let* ((max-value (read))
+;         (result (generate-normalized-random-list n max-value))
+;         (♦print-array* t))
+;    (format t "Result is ~S~%" result)))
