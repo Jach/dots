@@ -1,5 +1,8 @@
 (in-package :swank)
 
+; binds to ipv4 explicitly
+(setf swank::*loopback-interface* "127.0.0.1")
+
 ; from swank-fancy-inspector.lisp:
 ; changed grouping to inheritance (groups by class).
 ; If order is unsorted, then it shows
