@@ -7,6 +7,7 @@ slimv
 vim-abolish
 vim-bbye
 vim-buftabline
+vim-easy-align
 vim-eunuch
 vim-fugitive
 vim-grepper
